@@ -2,20 +2,24 @@ library(phyloseq); packageVersion("phyloseq")
 library(ggplot2); packageVersion("ggplot2")
 library(dacomp)
 
+###############################################################################
+
 # set working directory
-setwd('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis')
+setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome')
 
 # load microbiome data
-ASV_table <- readRDS('KORA\ DATA/Microbiome_data/dada2output/dada2output2020/seqtab2020.rds')
-taxon_assign <- readRDS('KORA\ DATA/Microbiome_data/dada2output/dada2output2020/taxa2020.rds')
+ASV_table <- readRDS('dada2output/seqtab2020.rds')
+taxon_assign <- readRDS('dada2output/taxa2020.rds')
 
 # load sample/matched_data
-load('Microbiome\ 2020/1.\ January/environment_matching/dat_matched_PM25.RData')
+load('dat_matched_PM25.RData')
 
 sample_df <- matched_df[order(matched_df$ff4_prid),]
 sample_df$W <- as.factor(sample_df$W)
 samples.out <- as.character(sample_df$ff4_prid)
 rownames(sample_df) <- samples.out
+
+################################################################################
 
 # create a phyloseq object
 ps <- phyloseq(otu_table(ASV_table, taxa_are_rows=FALSE),
