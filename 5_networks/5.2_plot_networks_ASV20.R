@@ -4,29 +4,30 @@ library(SpiecEasi)
 library(RColorBrewer)
 library(ForceAtlas2)
 library(igraph)
-
-
 library(EnvStats)
 library(gridExtra)
 library(Matrix)
-library(ForceAtlas2)
 
+###############################################################################
 
 # set working directory
-setwd('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis')
+setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome')
 
 # load microbiome data
-ASV_table_filtered <- readRDS('KORA\ DATA/Microbiome_data/dada2output/dada2output2020/seqtab2020_filtered.rds')
-taxon_assign <- readRDS('KORA\ DATA/Microbiome_data/dada2output/dada2output2020/taxa2020.rds')
+ASV_table_filtered <- readRDS('dada2output/seqtab2020_filtered.rds')
+taxon_assign <- readRDS('dada2output/taxa2020.rds')
 # load phylogenetic information
-load("KORA\ DATA/Microbiome_data/dada2output/dada2output2020/phylotree2020.phy")
+load("dada2output/phylotree2020.phy")
+
 # load sample/matched_data
-load('Microbiome\ 2020/1.\ January/environment_matching/dat_matched_PM25.RData')
+load('dat_matched_PM25.RData')
 
 sample_df <- matched_df[order(matched_df$ff4_prid),]
 sample_df$W <- as.factor(sample_df$W)
 samples.out <- as.character(sample_df$ff4_prid)
 rownames(sample_df) <- samples.out
+
+################################################################################
 
 # create a phyloseq object
 ps <- phyloseq(ASV_table_filtered,
@@ -34,7 +35,6 @@ ps <- phyloseq(ASV_table_filtered,
                tax_table(taxon_assign),
                phy_tree(tGTR$tree))
 ps
-
 
 ##############
 # SPIEC-EASI #
@@ -46,11 +46,11 @@ ps_W1 <- subset_samples(ps, W == 1)
 # # control
 ps_W0 <- subset_samples(ps, W == 0)
 
-load('Microbiome\ 2020/2.\ February/SE_output_W1_PM25_ASV20.RData')
-load('Microbiome\ 2020/2.\ February/SE_output_W0_PM25_ASV20.RData')
-load('Microbiome\ 2020/2.\ February/SE_overall_PM25_ASV20.RData')
+load('SE_output_W1_PM25_ASV20.RData')
+load('SE_output_W0_PM25_ASV20.RData')
+load('SE_overall_PM25_ASV20.RData')
 
-rm(otu_table, samples.out, taxa_final, tGTR, sample_df, matched_df)
+rm(samples.out, taxon_assign, tGTR, sample_df, matched_df)
 
 ########## OVERALL ##########
 ig.gl_overall <- adj2igraph(getRefit(se.gl.ps_overall),
@@ -69,10 +69,10 @@ elist.gl <- elist.gl[order(elist.gl$i),]
 # add weights as edges attribute
 ig.gl_overall <- set_edge_attr(ig.gl_overall, "weight", index = E(ig.gl_overall), elist.gl$x)
 
-# set.seed(87)
-# gl.coord <- layout.forceatlas2(ig.gl_overall, iterations=2000, plotstep=100)
-# V(ig.gl_overall)$layout_x <- gl.coord[,1]
-# V(ig.gl_overall)$layout_y <- gl.coord[,2]
+set.seed(1)
+gl.coord <- layout.forceatlas2(ig.gl_overall) ### warning with forceatlas
+V(ig.gl_overall)$layout_x <- gl.coord[,1]
+V(ig.gl_overall)$layout_y <- gl.coord[,2]
 
 # color of weights
 E(ig.gl_overall)$color <- "blue"
