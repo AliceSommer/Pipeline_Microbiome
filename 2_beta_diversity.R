@@ -1,21 +1,24 @@
 
-library(devtools)
-library(pldist)
 library(phyloseq); packageVersion("phyloseq")
 library(ggplot2); packageVersion("ggplot2")
 library(plyr); packageVersion("plyr")
+library(pldist)
+
+###############################################################################
 
 # set working directory
-setwd('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis')
+setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome')
 
 # load microbiome data
-ASV_table <- readRDS('KORA\ DATA/Microbiome_data/dada2output/dada2output2020/seqtab2020.rds')
-taxon_assign <- readRDS('KORA\ DATA/Microbiome_data/dada2output/dada2output2020/taxa2020.rds')
+ASV_table <- readRDS('dada2output/seqtab2020.rds')
+taxon_assign <- readRDS('dada2output/taxa2020.rds')
 # load phylogenetic information
-load("KORA\ DATA/Microbiome_data/dada2output/dada2output2020/phylotree2020.phy")
+load("dada2output/phylotree2020.phy")
 
 # load sample/matched_data
-load('Microbiome\ 2020/1.\ January/environment_matching/dat_matched_PM25.RData')
+load('dat_matched_PM25.RData')
+
+###############################################################################
 
 sample_df <- matched_df[order(matched_df$ff4_prid),]
 sample_df$W <- as.factor(sample_df$W)
