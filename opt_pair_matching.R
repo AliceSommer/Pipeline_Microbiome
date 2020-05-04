@@ -5,14 +5,16 @@ library(reshape2)
 library(gridExtra)
 library(igraph)
 
+###############################################################################
+
 # set working directory
-setwd('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/Microbiome\ -\ SEPT19/data_matched')
+setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome')
 
 # load data formated in NOV18 
-load('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/Microbiome\ -\ NOV18/dat_transformed_NOV18.RData')
+load('dat_transformed_NOV18.RData')
 
 # download long-term exposure data 
-dat_pollution = read.sas7bdat('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/KORA\ DATA/Microbiome_data/Microbiome_data_exposure/Daten/pv_14117g_sommer_gc_20180806.sas7bdat')
+dat_pollution = read.sas7bdat('pv_14117g_sommer_gc_20180806.sas7bdat')
 head(dat_pollution)
 
 # processing
@@ -233,7 +235,7 @@ ggplot(dat_melt_bin3, aes(x = factor(W), fill = factor(value))) +
 # Matching #
 ############
 
-setwd("/Volumes/GoogleDrive/My\ Drive/Bureau/Stephane_matching") ### put code elsewhere ###
+setwd("/Volumes/GoogleDrive/My\ Drive/Bureau/Stephane_matching") ### put code elsewhere ### ADD functions to github !
 source("matchingOzone_functions_2.R")
 
 data_match = data
