@@ -1,14 +1,18 @@
 library(phyloseq); packageVersion("phyloseq")
 library(ggplot2); packageVersion("ggplot2")
 
+###############################################################################
+
 # set working directory
-setwd('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis')
+setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome')
 
 # load microbiome data
-ASV_table <- readRDS('KORA\ DATA/Microbiome_data/dada2output/dada2output2020/seqtab2020.rds')
-taxon_assign <- readRDS('KORA\ DATA/Microbiome_data/dada2output/dada2output2020/taxa2020.rds')
+ASV_table <- readRDS('dada2output/seqtab2020.rds')
+taxon_assign <- readRDS('dada2output/taxa2020.rds')
 # load phylogenetic information
-load("KORA\ DATA/Microbiome_data/dada2output/dada2output2020/phylotree2020.phy")
+load("dada2output/phylotree2020.phy")
+
+###############################################################################
 
 # create a phyloseq object
 ps <- phyloseq(otu_table(ASV_table, taxa_are_rows=FALSE),
