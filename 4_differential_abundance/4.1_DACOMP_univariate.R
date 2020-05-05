@@ -36,16 +36,33 @@ ps
 
 rank_names(ps)
 
-## agglomerate to Genus ##
-ps_Genus <- tax_glom(ps, taxrank = "Genus")
-ps_Genus # 269 taxa
+########################
+# Prevalence Filtering #
+########################
 
-## agglomerate to Genus ##
-ps_Family <- tax_glom(ps, taxrank = "Family")
-ps_Family
+# Compute prevalence of each feature, store as data.frame
+# Prevalence: the number of samples in which a taxa appears at least once.
+prevdf = apply(X = otu_table(ps), 2, function(x) sum(x > 0))
+
+#  Define prevalence threshold as 5% of total samples
+prevalenceThreshold = 0.1 * nsamples(ps)
+prevalenceThreshold
+
+# Execute prevalence  filter, using `prune_taxa()` function
+sum(prevdf >= prevalenceThreshold)
+keepTaxa = colnames(otu_table(ps))[(prevdf >= prevalenceThreshold)]
+ps2 = prune_taxa(keepTaxa, ps)
+
+# ## agglomerate to Genus ##
+# ps_Genus <- tax_glom(ps, taxrank = "Genus")
+# ps_Genus # 269 taxa
+# 
+# ## agglomerate to Genus ##
+# ps_Family <- tax_glom(ps, taxrank = "Family")
+# ps_Family
 
 # decide with which agglomeration to work
-ps_work = ps_Family
+ps_work = ps2
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 set.seed(16)
@@ -111,8 +128,8 @@ start.time = Sys.time()
 pvals_marginal_result = dacomp.test.with.strata(X = X_reference_select,
                                                 Y = Y_reference_select,
                                                 Z = Z_reference_select,
-                                                Method = 'Wilcoxon-Paired',  # 'Wilcoxon-Strata-Asymp' for asymptotic test over strata, 'C_Wilcoxon' for (block) permutation based
-                                                do.block.mean.normalization = T,
+                                                Method = 'Wilcoxon-Strata-Asymp',  # 'Wilcoxon-Strata-Asymp' for asymptotic test over strata, 'C_Wilcoxon' for (block) permutation based
+                                                do.block.mean.normalization = F,
                                                 nr.perm = 10000, Minimum_Block_Size = 2,
                                                 normalize_by_DACOMP_ratio = T,
                                                 run.in.parallel = T)
