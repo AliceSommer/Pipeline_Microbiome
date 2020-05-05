@@ -34,9 +34,17 @@ ps <- phyloseq(otu_table(ASV_table, taxa_are_rows=FALSE),
                tax_table(taxon_assign))
 ps
 
+rank_names(ps)
+
 ## agglomerate to Genus ##
 ps_Genus <- tax_glom(ps, taxrank = "Genus")
 ps_Genus # 269 taxa
+
+## agglomerate to Genus ##
+ps_Family <- tax_glom(ps, taxrank = "Family")
+ps_Family
+
+ps_work = ps_Family
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 set.seed(16)
@@ -52,6 +60,13 @@ Z = as.factor(sample_data(ps_Genus)$pair_nb) # use Z as pairs for the paired tes
 
 # we sample some pairs to keep a balanced set
 pair_id = unique(sample_data(ps_Genus)$pair_nb)
+X = as(otu_table(ps_work), "matrix")
+Y = sample_data(ps_work)$W # research variable
+# Z = as.factor(sample_data(ps)$u3csex) # strata
+Z = as.factor(sample_data(ps_work)$pair_nb) # use Z as pairs for the paired test
+
+# we sample some pairs to keep a balanced set
+pair_id = unique(sample_data(ps_work)$pair_nb)
 pair_id_sample = sample(pair_id, replace = F, size = samples_for_reference) 
 
 ## Note: code only if you want to test specific taxa
