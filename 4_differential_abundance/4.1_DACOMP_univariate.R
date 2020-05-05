@@ -44,6 +44,7 @@ ps_Genus # 269 taxa
 ps_Family <- tax_glom(ps, taxrank = "Family")
 ps_Family
 
+# decide with which agglomeration to work
 ps_work = ps_Family
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -53,13 +54,13 @@ samples_for_reference = 50 # how many samples should be taken for reference
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Data
-X = as(otu_table(ps_Genus), "matrix")
-Y = sample_data(ps_Genus)$W # research variable
+X = as(otu_table(ps_work), "matrix")
+Y = sample_data(ps_work)$W # research variable
 # Z = as.factor(sample_data(ps)$u3csex) # strata
-Z = as.factor(sample_data(ps_Genus)$pair_nb) # use Z as pairs for the paired test
+Z = as.factor(sample_data(ps_work)$pair_nb) # use Z as pairs for the paired test
 
 # we sample some pairs to keep a balanced set
-pair_id = unique(sample_data(ps_Genus)$pair_nb)
+pair_id = unique(sample_data(ps_work)$pair_nb)
 X = as(otu_table(ps_work), "matrix")
 Y = sample_data(ps_work)$W # research variable
 # Z = as.factor(sample_data(ps)$u3csex) # strata
@@ -95,7 +96,7 @@ pair_id_sample = sample(pair_id, replace = F, size = samples_for_reference)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Step 1: Split data to reference selection set and test set
 
-condition = sample_data(ps_Genus)$pair_nb %in% pair_id_sample # warning: can only do that because X, Y, Z have same sample_id order
+condition = sample_data(ps_work)$pair_nb %in% pair_id_sample # warning: can only do that because X, Y, Z have same sample_id order
 
 X_reference_select = X[condition,]
 X_test = X[!condition,]
