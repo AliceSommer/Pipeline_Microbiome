@@ -1,18 +1,25 @@
-library(phyloseq); packageVersion("phyloseq")
-library(ggplot2); packageVersion("ggplot2")
+library(coin)
 library(dacomp)
+library(Hmisc)
+library(doRNG)
+library(phyloseq); packageVersion("phyloseq")
+# library(openxlsx)
+
+# set working directory
+setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/Pipeline_Microbiome')
+
+# This script gives an example for split testing using dacomp.
+source('misc/Functions_for_univariate_tests.R')
+source('misc/dacomp_testing_and_reference_selection_by_split.R')
 
 ###############################################################################
 
-# set working directory
-setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome')
-
 # load microbiome data
-ASV_table <- readRDS('dada2output/seqtab2020.rds')
-taxon_assign <- readRDS('dada2output/taxa2020.rds')
+ASV_table <- readRDS('data_pipeline_microbiome/dada2output/seqtab2020.rds')
+taxon_assign <- readRDS('data_pipeline_microbiome/dada2output/taxa2020.rds')
 
 # load sample/matched_data
-load('dat_matched_PM25.RData')
+load('data_pipeline_microbiome/dat_matched_PM25.RData')
 
 sample_df <- matched_df[order(matched_df$ff4_prid),]
 sample_df$W <- as.factor(sample_df$W)
@@ -27,95 +34,175 @@ ps <- phyloseq(otu_table(ASV_table, taxa_are_rows=FALSE),
                tax_table(taxon_assign))
 ps
 
-otu_matrix = as(otu_table(ps), "matrix")
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Parameters for method:
+samples_for_reference = 50 # how many samples should be taken for reference
 
-result.selected.references = dacomp.select_references(X = otu_matrix,
-                                                      median_SD_threshold = 0.5, #APPLICATION SPECIFIC
-                                                      verbose = F)
-print(result.selected.references)
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Data
+X = as(otu_table(ps), "matrix")
+Y = sample_data(ps)$W # research variable
+# Z = as.factor(sample_data(ps)$u3csex) # strata
+Z = as.factor(sample_data(ps)$pair_nb) # use Z as pairs for the paired test
+
+# we sample some pairs to keep a balanced set
+pair_id = unique(sample_data(ps)$pair_nb)
+pair_id_sample = sample(pair_id, replace = F, size = samples_for_reference) 
+
+####### DATA/TAXA to test #######
+med_IFG <- read.xlsx('Microbiome\ 2020/4.\ April/DACOMP_Split_AJS_Edition-master/meditation_analysis_Liu.xlsx', sheet = 1, rows = 3:82)
+head(med_IFG)
+
+med_DT2 <- read.xlsx('Microbiome\ 2020/4.\ April/DACOMP_Split_AJS_Edition-master/meditation_analysis_Liu.xlsx', sheet = 2, rows = 3:87)
+head(med_DT2)
+str(med_DT2)
+
+med_species <- med_IFG[,"Species"]
+med_species_D <- med_DT2[,"Species"]
+regex_sub <- '[a-z]__[aA-zZ]'
+
+locate_sp <- tax_table(ps)[,"Species"] %in% sub('[a-z]__', "", med_species[grep(regex_sub, med_species)])
+taxa_id <- which(locate_sp == TRUE)
+taxa_id
+
+locate_sp_D <- tax_table(ps)[,"Species"] %in% sub('[a-z]__', "", med_species_D[grep(regex_sub, med_species_D)])
+taxa_id_unique <- unique(c(taxa_id, which(locate_sp_D == TRUE)))
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Data analysis starts from here:
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Step 1: Split data to reference selection set and test set
+
+condition = sample_data(ps)$pair_nb %in% pair_id_sample # warning: can only do that because X, Y, Z have same sample_id order
+
+X_reference_select = X[condition,]
+X_test = X[-c(condition),]
+Y_reference_select = Y[condition]
+Y_test = Y[-c(condition)]
+Z_reference_select = Z[condition]
+Z_test = Z[-c(condition)]
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Step 2: Run marginal tests (TSS normalization) on the reference selection data
+start.time = Sys.time()
+pvals_marginal_result = dacomp.test.with.strata(X = X_reference_select,
+                                                Y = Y_reference_select,
+                                                Z = Z_reference_select,
+                                                Method = 'Wilcoxon-Paired',  # 'Wilcoxon-Strata-Asymp' for asymptotic test over strata, 'C_Wilcoxon' for (block) permutation based
+                                                do.block.mean.normalization = T,
+                                                nr.perm = 10000, Minimum_Block_Size = 2,
+                                                normalize_by_DACOMP_ratio = T,
+                                                run.in.parallel = T)
+end.time = Sys.time()
+end.time - start.time
+plot(-log(pvals_marginal_result$P.values),main = 'log Pval for reference selection cohort')
+abline(h = -log(0.5),col = 'red')
+
+# avoid selecting the taxa to test in my reference set
+# set to zero
+pvals_marginal_result$P.values[taxa_id_unique] = 0
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Step 3: Select the reference set of taxa using the above P-values
+reference_obj = dacomp.select_references.by.split(P_vals_marginal = pvals_marginal_result,
+                                                  Counts_Mat_testing = X_test,
+                                                  REFERENCE_SELECTION_PVAL_THRESHOLD = 0.5,
+                                                  MINIMAL_NR_SUBJECTS_FOR_REFERENCE_TEST = 5,
+                                                  MINIMAL_TA = 50,
+                                                  MAXIMAL_TA = 1000)
+
+# Sanity checks:
+reference_obj$selected_MinAbundance
+length(reference_obj$selected_references)
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Step 4: Test using the selected reference set
+start.time = Sys.time()
+pvals_DACOMP_RATIO = dacomp.test.with.strata(X = X_test,
+                                             Y = Y_test,
+                                             Z = Z_test,
+                                             taxa_to_normalize_by = reference_obj,
+                                             Method = 'Wilcoxon-Paired', # 'Wilcoxon-Strata-Asymp' for asymptotic test over strata, 'C_Wilcoxon' for (block) permutation based
+                                             do.block.mean.normalization = F,
+                                             nr.perm = 10000, Minimum_Block_Size = 2,
+                                             normalize_by_DACOMP_ratio = T,
+                                             run.in.parallel = T)
+
+end.time = Sys.time()
+end.time - start.time
+
+DACOMP_discoveries = which(p.adjust(pvals_DACOMP_RATIO$P.values,method = 'BH')<=0.1)
+DACOMP_discoveries
+
+DSFDR_rejections = which(pvals_DACOMP_RATIO$DSFDR.AdjustedPvalues<=0.1)
+DSFDR_rejections
+
+# sanity check:
+# FDR = sum(DACOMP_discoveries>m1)/max(length(DACOMP_discoveries),1) ; FDR
+# TP = sum(DACOMP_discoveries<=m1) ; TP
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Step 5: Test, but only over 20 of the taxa.
+#The first 10 taxa will have lower DSFDR adjusted P-values, if we can focus our reseach question
+#to a smaller familiy of hypotheses with less signals
+
+DSFDR_filter = rep(F,ncol(X))
+DSFDR_filter[taxa_id_unique] = T
+pvals_DACOMP_RATIO_with_Filter = dacomp.test.with.strata(X = X_test,
+                                                         Y = Y_test,
+                                                         Z = Z_test,
+                                                         taxa_to_normalize_by = reference_obj,
+                                                         Method = 'Wilcoxon-Paired',
+                                                         do.block.mean.normalization = T,
+                                                         nr.perm = 10000, Minimum_Block_Size = 2,
+                                                         normalize_by_DACOMP_ratio = T,
+                                                         run.in.parallel = F,
+                                                         select.taxa.for.DSFDR = DSFDR_filter)
+
+#Compare DS-FDR p-values when testing:
+pvals_DACOMP_RATIO$DSFDR.AdjustedPvalues[taxa_id_unique] # over all taxa
+pvals_DACOMP_RATIO_with_Filter$P.values[taxa_id_unique]
+pvals_DACOMP_RATIO_with_Filter$DSFDR.AdjustedPvalues[taxa_id_unique] # over a specific set of taxa
+
+#############################
+# Subset some taxa to test #
+############################
+
+head(tax_table(ps))
+dim(tax_table(ps))
+colnames(tax_table(ps))
+
+# species only
+head(tax_table(ps)[,"Order"],50)
+
+grep('copri', tax_table(ps)[,"Species"])
+
+pvals_DACOMP_RATIO$P.values[grep('Prevotella', tax_table(ps)[,"Genus"])]
+
+sub_small_p <- subset(tax_table(ps),pvals_DACOMP_RATIO$P.values < .059)
+dim(sub_small_p)
+
+##############################
 
 
-dacomp.plot_reference_scores(result.selected.references)
-?dacomp.select_references
+pvals_DACOMP_RATIO$P.values[unique(taxa_id)]
 
-### DACOMP
+unique(taxa_id)[which(p.adjust(pvals_DACOMP_RATIO$P.values[unique(taxa_id)],method = 'BH')<=0.1)]
 
-#multiplicity correction levels for the BH and DS-FDR methods
-q_BH = q_DSFDR = 0.1
+tax_table(ps)[230,]
 
-#Perform testing:
-result.test = dacomp.test(X = otu_matrix, #counts data
-                          y = sample_data(ps)$W, #phenotype in y argument
-                          # obtained from dacomp.select_references(...):
-                          ind_reference_taxa = result.selected.references,
-                          test = DACOMP.TEST.NAME.WILCOXON, #constant, name of test
-                          verbose = F, q = q_DSFDR, nr_perm = 10000, # multiplicity adjustment level
-                          compute_ratio_normalization = T)
 
-#These are the indices of taxa discoverted as differentially abundant:
-# by applying a BH multiplicity adjustment on the P-values:
-rejected_BH = which(p.adjust(result.test$p.values.test.ratio.normalization, method = 'BH') <= q_BH)
-rejected_BH = which(result.test$p.values.test.ratio.normalization <= .05) # not adjusted BH, nor FDR
-
-#by applying a DS-FDR multiplicity adjustment on the P-values:
-rejected_DSFDR = result.test$dsfdr_rejected
-
-print(result.test)
-
-### Corncob
-### don't know if I want to use that for my project.................
-
-# taxa_to_test = c(1:ncol(otu_matrix))
+# ############ Genus level ################
+# med_genus <- med_IFG[,"Genus"]
+# med_genus_D <- med_DT2[,"Genus"]
 # 
-# #We can have two types of models:
-# #"DACOMP type models" - models for the number of counts belonging to the tested taxon, when observing lambda counts belonging to the tested taxon and the reference
-# #(i.e., rarefy subvector (X_j,X_reference), j being the tested taxon, to equal number of reads acroos samples)
-# P.values.rarefaction = rep(NA,length(taxa_to_test))
-# # "DACOMP-ratiotype models" - models for the ratio of reads belong to the tested taxon, when observing the total number of reads available to the tested taxon and the reference set.
-# #(i.e., model subvector (X_j,X_reference) directly, j being the tested taxon, with a different number of reads per subject)
-# P.values.ratio = rep(NA,length(taxa_to_test))
+# locate_gen <- tax_table(ps)[,"Genus"] %in% sub('[a-z]__', "", med_genus[grep(regex_sub, med_genus)])
+# taxa_id_gen <- which(locate_gen == TRUE)
+# taxa_id_gen
 # 
-# # Iterate over taxa:
-# for(taxon_id in 1:length(taxa_to_test)){
-#   print(paste0(' Model for taxon ',taxon_id))
-#   current_taxon = taxa_to_test[taxon_id]
-#   
-#   if(current_taxon %in% result.selected.references$selected_references){
-#     print('taxon in reference taxa,skipping')
-#     next()
-#   }
-#   
-#   #perform hypergeomtric sampling:
-#   nom = otu_matrix[,current_taxon]
-#   dnom = apply(otu_matrix[,result.selected.references$selected_references,drop = F],1,sum)
-#   lambda_j = min(nom + dnom)
-#   X_tilde = rhyper(nrow(otu_matrix),m = nom,n = dnom,k = lambda_j)
-#   # build model - rarefaction, equivlant of DACOMP
-#   data_Frame <- data.frame("W" = X_tilde,
-#                            "M" = lambda_j,
-#                            "X1" = sample_data(ps)$W)
-#   try({
-#     model = bbdml(formula = cbind(W, M - W) ~ X1,
-#                   phi.formula = ~ X1,
-#                   data = data_Frame);
-#     model_summary = summary(model);
-#     
-#     P.values.rarefaction[taxon_id] = model_summary$coefficients["mu.X11","Pr(>|t|)"]  
-#   })
-#   
-#   
-#   # build model - rarefaction, equivlant of DACOMP-ratio
-#   data_Frame <- data.frame("W" = nom,
-#                            "M" = nom+dnom,
-#                            "X1" = sample_data(ps)$W)
-#   try({
-#     model = bbdml(formula = cbind(W, M - W) ~ X1,
-#                   phi.formula = ~ X1,
-#                   data = data_Frame);
-#     model_summary = summary(model);
-#     
-#     P.values.ratio[taxon_id] = model_summary$coefficients["mu.X11","Pr(>|t|)"]
-#   })
-#   
-# }
-
+# length(unique(taxa_id_gen))
+# 
+# pvals_DACOMP_RATIO$P.values[unique(taxa_id_gen)]
+# 
+# unique(taxa_id_gen)[which(p.adjust(pvals_DACOMP_RATIO$P.values[unique(taxa_id_gen)],method = 'BH')<=0.1)]
