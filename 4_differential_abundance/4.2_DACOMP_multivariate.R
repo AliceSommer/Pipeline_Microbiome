@@ -1,5 +1,81 @@
-library(vegan)
-#### install.packages('subzero') ## TO DO with Barak's package !
+library(energy)
+
+X_test_ord = X_test[order(Y_test),]
+Y_test_ord = Y_test[order(Y_test)]
+Z_test_ord = Z_test[order(Y_test)]
+
+set.seed(16)
+MULTI.PERM = 1000
+
+# function adapted from Univariate.Test.Generate.Permutations.Object
+Univariate.Test.Generate.Permutations.IDs=function(Z, nr.perm = 200){
+  
+  # We identify the different blocks
+  Z.values = unique(Z)
+  Z.ind.list = list()
+  ind = 1:length(Z)
+  
+  for(Zi in 1:length(Z.values)){
+    current_block = which(Z == Z.values[Zi])
+    if(length(current_block)>1){
+      Z.ind.list[[length(Z.ind.list) + 1]] = current_block
+    }
+  }
+  
+  # and generate a permutation matrix by over indices (perm_matrix), the matrix (Y_perm_matrix) will contain the actual permuted values
+  perm_matrix = matrix(NA,nrow = length(Z), ncol = nr.perm+1)
+  for(j in 1:(nr.perm+1)){
+    perm_matrix[,j] = 1:length(Z)
+    for(Zi in 1:length(Z.ind.list)){
+      perm_matrix[Z.ind.list[[Zi]],j] = sample(ind[Z.ind.list[[Zi]]])
+    }
+  }
+  return(perm_matrix)
+}
+
+perm_id = Univariate.Test.Generate.Permutations.IDs(Z_test_ord, MULTI.PERM-1)
+
+Energy_test_with_permutation_done_manually = function(d,sizes, perm_id = perm_id, B = 200){
+  stat_for_original_data = eqdist.e(x = d,distance = T, sizes = sizes) 
+  
+  #run over B permutations
+  stat_perm = rep(NA,B)
+  for(i in 1:B){
+    current_perm = perm_id[,B] # Note: This needs to be switched to permutations that match your design
+    current_d = d[current_perm,current_perm]
+    stat_perm[i] = eqdist.e(x = current_d,distance = T, sizes = sizes)
+  }
+  
+  PV = mean(c(stat_perm,stat_for_original_data) >= stat_for_original_data)   
+  ret = list()
+  ret$stat_for_original_data = stat_for_original_data
+  ret$permutation_statistics = stat_perm
+  ret$P.value = PV
+  return(ret)
+}
+
+ind_reference = reference_obj$selected_references
+total_counts_in_reference = apply(X_test_ord[,ind_reference],1,sum)
+X_genera_TSS = cbind(X_test_ord,total_counts_in_reference)
+for(i in 1:nrow(X_genera_TSS)){
+  X_genera_TSS[i,] = X_genera_TSS[i,]/sum(X_genera_TSS[i,]) # contribution: sum(X_genera_TSS[i,] does not have a pseudocount
+}
+
+X_genera_TSS = X_genera_TSS[,-ind_reference] # throw out reference but not mandatory (debatable)
+
+d <- as.matrix(dist(X_genera_TSS)) # compute the distance metric. In the distance metric you have to quadrants -
+# two of them give inter-trait value distances, and two give between trait values distances across samples
+
+result = Energy_test_with_permutation_done_manually(d,sizes = as.numeric(table(Y_test_ord)),B = MULTI.PERM)
+result$stat_for_original_data
+result$P.value
+
+################################################ 
+### Barak's code for testing multiple Genera ###
+################################################ 
+
+## library(vegan)
+### install.packages('subzero') ## TO DO with Barak's package !
 
 ################################################################################
 
