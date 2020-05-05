@@ -6,11 +6,11 @@ library(phyloseq); packageVersion("phyloseq")
 # library(openxlsx)
 
 # set working directory
-setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/Pipeline_Microbiome')
+setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE')
 
 # This script gives an example for split testing using dacomp.
-source('misc/Functions_for_univariate_tests.R')
-source('misc/dacomp_testing_and_reference_selection_by_split.R')
+source('Pipeline_Microbiome/misc/Functions_for_univariate_tests.R')
+source('Pipeline_Microbiome/misc/dacomp_testing_and_reference_selection_by_split.R')
 
 ###############################################################################
 
@@ -34,13 +34,17 @@ ps <- phyloseq(otu_table(ASV_table, taxa_are_rows=FALSE),
                tax_table(taxon_assign))
 ps
 
+## agglomerate to Genus ##
+ps_Genus <- tax_glom(ps, taxrank = "Genus")
+ps_Genus # 269 taxa
+
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Parameters for method:
 samples_for_reference = 50 # how many samples should be taken for reference
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Data
-X = as(otu_table(ps), "matrix")
+X = as(otu_table(ps_Genus), "matrix")
 Y = sample_data(ps)$W # research variable
 # Z = as.factor(sample_data(ps)$u3csex) # strata
 Z = as.factor(sample_data(ps)$pair_nb) # use Z as pairs for the paired test
@@ -49,24 +53,26 @@ Z = as.factor(sample_data(ps)$pair_nb) # use Z as pairs for the paired test
 pair_id = unique(sample_data(ps)$pair_nb)
 pair_id_sample = sample(pair_id, replace = F, size = samples_for_reference) 
 
-####### DATA/TAXA to test #######
-med_IFG <- read.xlsx('Microbiome\ 2020/4.\ April/DACOMP_Split_AJS_Edition-master/meditation_analysis_Liu.xlsx', sheet = 1, rows = 3:82)
-head(med_IFG)
 
-med_DT2 <- read.xlsx('Microbiome\ 2020/4.\ April/DACOMP_Split_AJS_Edition-master/meditation_analysis_Liu.xlsx', sheet = 2, rows = 3:87)
-head(med_DT2)
-str(med_DT2)
-
-med_species <- med_IFG[,"Species"]
-med_species_D <- med_DT2[,"Species"]
-regex_sub <- '[a-z]__[aA-zZ]'
-
-locate_sp <- tax_table(ps)[,"Species"] %in% sub('[a-z]__', "", med_species[grep(regex_sub, med_species)])
-taxa_id <- which(locate_sp == TRUE)
-taxa_id
-
-locate_sp_D <- tax_table(ps)[,"Species"] %in% sub('[a-z]__', "", med_species_D[grep(regex_sub, med_species_D)])
-taxa_id_unique <- unique(c(taxa_id, which(locate_sp_D == TRUE)))
+## Note: code only if you want to test specific taxa
+# ####### DATA/TAXA to test #######
+# med_IFG <- read.xlsx('Microbiome\ 2020/4.\ April/DACOMP_Split_AJS_Edition-master/meditation_analysis_Liu.xlsx', sheet = 1, rows = 3:82)
+# head(med_IFG)
+# 
+# med_DT2 <- read.xlsx('Microbiome\ 2020/4.\ April/DACOMP_Split_AJS_Edition-master/meditation_analysis_Liu.xlsx', sheet = 2, rows = 3:87)
+# head(med_DT2)
+# str(med_DT2)
+# 
+# med_species <- med_IFG[,"Species"]
+# med_species_D <- med_DT2[,"Species"]
+# regex_sub <- '[a-z]__[aA-zZ]'
+# 
+# locate_sp <- tax_table(ps)[,"Species"] %in% sub('[a-z]__', "", med_species[grep(regex_sub, med_species)])
+# taxa_id <- which(locate_sp == TRUE)
+# taxa_id
+# 
+# locate_sp_D <- tax_table(ps)[,"Species"] %in% sub('[a-z]__', "", med_species_D[grep(regex_sub, med_species_D)])
+# taxa_id_unique <- unique(c(taxa_id, which(locate_sp_D == TRUE)))
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Data analysis starts from here:
@@ -99,9 +105,10 @@ end.time - start.time
 plot(-log(pvals_marginal_result$P.values),main = 'log Pval for reference selection cohort')
 abline(h = -log(0.5),col = 'red')
 
+## Note: code only if you want to test specific taxa
 # avoid selecting the taxa to test in my reference set
 # set to zero
-pvals_marginal_result$P.values[taxa_id_unique] = 0
+# pvals_marginal_result$P.values[taxa_id_unique] = 0
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Step 3: Select the reference set of taxa using the above P-values
@@ -142,67 +149,53 @@ DSFDR_rejections
 # FDR = sum(DACOMP_discoveries>m1)/max(length(DACOMP_discoveries),1) ; FDR
 # TP = sum(DACOMP_discoveries<=m1) ; TP
 
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Step 5: Test, but only over 20 of the taxa.
-#The first 10 taxa will have lower DSFDR adjusted P-values, if we can focus our reseach question
-#to a smaller familiy of hypotheses with less signals
-
-DSFDR_filter = rep(F,ncol(X))
-DSFDR_filter[taxa_id_unique] = T
-pvals_DACOMP_RATIO_with_Filter = dacomp.test.with.strata(X = X_test,
-                                                         Y = Y_test,
-                                                         Z = Z_test,
-                                                         taxa_to_normalize_by = reference_obj,
-                                                         Method = 'Wilcoxon-Paired',
-                                                         do.block.mean.normalization = T,
-                                                         nr.perm = 10000, Minimum_Block_Size = 2,
-                                                         normalize_by_DACOMP_ratio = T,
-                                                         run.in.parallel = F,
-                                                         select.taxa.for.DSFDR = DSFDR_filter)
-
-#Compare DS-FDR p-values when testing:
-pvals_DACOMP_RATIO$DSFDR.AdjustedPvalues[taxa_id_unique] # over all taxa
-pvals_DACOMP_RATIO_with_Filter$P.values[taxa_id_unique]
-pvals_DACOMP_RATIO_with_Filter$DSFDR.AdjustedPvalues[taxa_id_unique] # over a specific set of taxa
-
-#############################
-# Subset some taxa to test #
-############################
-
-head(tax_table(ps))
-dim(tax_table(ps))
-colnames(tax_table(ps))
-
-# species only
-head(tax_table(ps)[,"Order"],50)
-
-grep('copri', tax_table(ps)[,"Species"])
-
-pvals_DACOMP_RATIO$P.values[grep('Prevotella', tax_table(ps)[,"Genus"])]
-
-sub_small_p <- subset(tax_table(ps),pvals_DACOMP_RATIO$P.values < .059)
-dim(sub_small_p)
-
-##############################
-
-
-pvals_DACOMP_RATIO$P.values[unique(taxa_id)]
-
-unique(taxa_id)[which(p.adjust(pvals_DACOMP_RATIO$P.values[unique(taxa_id)],method = 'BH')<=0.1)]
-
-tax_table(ps)[230,]
-
-
-# ############ Genus level ################
-# med_genus <- med_IFG[,"Genus"]
-# med_genus_D <- med_DT2[,"Genus"]
+## Note: code only if you want to test specific taxa
+# #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# # Step 5: Test, but only over 20 of the taxa.
+# #The first 10 taxa will have lower DSFDR adjusted P-values, if we can focus our reseach question
+# #to a smaller familiy of hypotheses with less signals
 # 
-# locate_gen <- tax_table(ps)[,"Genus"] %in% sub('[a-z]__', "", med_genus[grep(regex_sub, med_genus)])
-# taxa_id_gen <- which(locate_gen == TRUE)
-# taxa_id_gen
+# DSFDR_filter = rep(F,ncol(X))
+# DSFDR_filter[taxa_id_unique] = T
+# pvals_DACOMP_RATIO_with_Filter = dacomp.test.with.strata(X = X_test,
+#                                                          Y = Y_test,
+#                                                          Z = Z_test,
+#                                                          taxa_to_normalize_by = reference_obj,
+#                                                          Method = 'Wilcoxon-Paired',
+#                                                          do.block.mean.normalization = T,
+#                                                          nr.perm = 10000, Minimum_Block_Size = 2,
+#                                                          normalize_by_DACOMP_ratio = T,
+#                                                          run.in.parallel = F,
+#                                                          select.taxa.for.DSFDR = DSFDR_filter)
 # 
-# length(unique(taxa_id_gen))
+# #Compare DS-FDR p-values when testing:
+# pvals_DACOMP_RATIO$DSFDR.AdjustedPvalues[taxa_id_unique] # over all taxa
+# pvals_DACOMP_RATIO_with_Filter$P.values[taxa_id_unique]
+# pvals_DACOMP_RATIO_with_Filter$DSFDR.AdjustedPvalues[taxa_id_unique] # over a specific set of taxa
 # 
-# pvals_DACOMP_RATIO$P.values[unique(taxa_id_gen)]
+# #############################
+# # Subset some taxa to test #
+# ############################
 # 
-# unique(taxa_id_gen)[which(p.adjust(pvals_DACOMP_RATIO$P.values[unique(taxa_id_gen)],method = 'BH')<=0.1)]
+# head(tax_table(ps))
+# dim(tax_table(ps))
+# colnames(tax_table(ps))
+# 
+# # species only
+# head(tax_table(ps)[,"Order"],50)
+# 
+# grep('copri', tax_table(ps)[,"Species"])
+# 
+# pvals_DACOMP_RATIO$P.values[grep('Prevotella', tax_table(ps)[,"Genus"])]
+# 
+# sub_small_p <- subset(tax_table(ps),pvals_DACOMP_RATIO$P.values < .059)
+# dim(sub_small_p)
+# 
+# ##############################
+# 
+# pvals_DACOMP_RATIO$P.values[unique(taxa_id)]
+# 
+# unique(taxa_id)[which(p.adjust(pvals_DACOMP_RATIO$P.values[unique(taxa_id)],method = 'BH')<=0.1)]
+# 
+# tax_table(ps)[230,]
+# 
