@@ -39,20 +39,20 @@ ps_Genus <- tax_glom(ps, taxrank = "Genus")
 ps_Genus # 269 taxa
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+set.seed(16)
 # Parameters for method:
 samples_for_reference = 50 # how many samples should be taken for reference
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Data
 X = as(otu_table(ps_Genus), "matrix")
-Y = sample_data(ps)$W # research variable
+Y = sample_data(ps_Genus)$W # research variable
 # Z = as.factor(sample_data(ps)$u3csex) # strata
-Z = as.factor(sample_data(ps)$pair_nb) # use Z as pairs for the paired test
+Z = as.factor(sample_data(ps_Genus)$pair_nb) # use Z as pairs for the paired test
 
 # we sample some pairs to keep a balanced set
-pair_id = unique(sample_data(ps)$pair_nb)
+pair_id = unique(sample_data(ps_Genus)$pair_nb)
 pair_id_sample = sample(pair_id, replace = F, size = samples_for_reference) 
-
 
 ## Note: code only if you want to test specific taxa
 # ####### DATA/TAXA to test #######
@@ -80,14 +80,14 @@ pair_id_sample = sample(pair_id, replace = F, size = samples_for_reference)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Step 1: Split data to reference selection set and test set
 
-condition = sample_data(ps)$pair_nb %in% pair_id_sample # warning: can only do that because X, Y, Z have same sample_id order
+condition = sample_data(ps_Genus)$pair_nb %in% pair_id_sample # warning: can only do that because X, Y, Z have same sample_id order
 
 X_reference_select = X[condition,]
-X_test = X[-c(condition),]
+X_test = X[!condition,]
 Y_reference_select = Y[condition]
-Y_test = Y[-c(condition)]
+Y_test = Y[!condition]
 Z_reference_select = Z[condition]
-Z_test = Z[-c(condition)]
+Z_test = Z[!condition]
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Step 2: Run marginal tests (TSS normalization) on the reference selection data
