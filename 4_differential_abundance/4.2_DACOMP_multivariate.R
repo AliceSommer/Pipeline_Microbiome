@@ -1,23 +1,6 @@
 library(vegan)
 #### install.packages('subzero') ## TO DO with Barak's package !
 
-###############################################################################
-
-# set working directory
-setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome')
-
-# load microbiome data
-ASV_table <- readRDS('dada2output/seqtab2020.rds')
-taxon_assign <- readRDS('dada2output/taxa2020.rds')
-
-# load sample/matched_data
-load('dat_matched_PM25.RData')
-
-sample_df <- matched_df[order(matched_df$ff4_prid),]
-sample_df$W <- as.factor(sample_df$W)
-samples.out <- as.character(sample_df$ff4_prid)
-rownames(sample_df) <- samples.out
-
 ################################################################################
 
 # Function for Mahalanobis distance 
@@ -54,7 +37,7 @@ smahal = function (Xmat)
 # Step III: check which genera have been identified in the data, and have more than 1 sOTU in them
 #%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-genera_labels = unname(tax_table(ps))[,"Genus"]
+genera_labels = unname(tax_table(ps_Genus))[,"Genus"]
 genera_labels_to_test = (which(table(genera_labels)>1))
 # genera_labels_to_test = genera_labels_to_test[!(names(genera_labels_to_test) %in% c('NA'))]
 
