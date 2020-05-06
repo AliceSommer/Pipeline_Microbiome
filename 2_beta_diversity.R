@@ -32,6 +32,10 @@ ps <- phyloseq(otu_table(ASV_table, taxa_are_rows=FALSE),
                phy_tree(tGTR$tree))
 ps
 
+###########################################
+##### Calculate distances with pldist #####
+###########################################
+
 # Input: Notice that row names are sample IDs 
 paired.otus <- as(otu_table(ps), "matrix") 
 paired.otus[1:4,1:4]
@@ -45,7 +49,6 @@ otu.data <- data_prep(paired.otus, paired.meta, paired = TRUE, pseudoct = NULL)
 otu.data$otu.props[1:3,1:3]  # OTU proportions 
 otu.data$otu.clr[1:3,1:3]    # CLR-transformed proportions
 res <- pltransform(otu.data, paired = TRUE, norm = TRUE)
-
 
 # Binary transformation 
 # 0.5 indicates OTU was present at Time 2, absent at Time 1
@@ -67,6 +70,9 @@ D.unifrac <- LUniFrac(otu.tab = paired.otus, metadata = paired.meta, tree = tGTR
 head(D.unifrac[, , "d_1"]) # gamma = 1 (quantitative paired transformation)
 head(D.unifrac[, , "d_UW"])  # unweighted LUniFrac (qualitative/binary paired transf.)]
 
+###########################################
+##### Low-dimensional representation ######
+###########################################
 fit_uni <- cmdscale(D.unifrac[, , "d_UW"],eig=TRUE, k=2) # k is the number of dim
 fit_uni
 
@@ -79,29 +85,29 @@ plot(x_uni, y_uni, xlab="Coordinate 1", ylab="Coordinate 2",
 ############################
 ##### Other distances ######
 ############################
-
-gower_dist <- pldist(paired.otus, paired.meta, paired = TRUE, binary = FALSE, 
-                     method = "gower", clr = TRUE)$D
-head(gower_dist)
-
-fit <- cmdscale(gower_dist,eig=TRUE, k=2) # k is the number of dim
-fit
-
-# plot solution
-x <- fit$points[,1]
-y <- fit$points[,2]
-plot(x, y, xlab="Coordinate 1", ylab="Coordinate 2",
-     main="Metric MDS - Gower", col = sample_data(ps)$W)
-
-bray_dist <- pldist(paired.otus, paired.meta, paired = TRUE, binary = FALSE, 
-                     method = "bray", clr = TRUE)$D
-
-fit_b <- cmdscale(bray_dist,eig=TRUE, k=2) # k is the number of dim
-fit_b
-
-# plot solution
-x_b <- fit_b$points[,1]
-y_b <- fit_b$points[,2]
-plot(x_b, y_b, xlab="Coordinate 1", ylab="Coordinate 2",
-     main="Metric MDS - Bray", col = sample_data(ps)$W)
+# 
+# gower_dist <- pldist(paired.otus, paired.meta, paired = TRUE, binary = FALSE, 
+#                      method = "gower", clr = TRUE)$D
+# head(gower_dist)
+# 
+# fit <- cmdscale(gower_dist,eig=TRUE, k=2) # k is the number of dim
+# fit
+# 
+# # plot solution
+# x <- fit$points[,1]
+# y <- fit$points[,2]
+# plot(x, y, xlab="Coordinate 1", ylab="Coordinate 2",
+#      main="Metric MDS - Gower", col = sample_data(ps)$W)
+# 
+# bray_dist <- pldist(paired.otus, paired.meta, paired = TRUE, binary = FALSE, 
+#                      method = "bray", clr = TRUE)$D
+# 
+# fit_b <- cmdscale(bray_dist,eig=TRUE, k=2) # k is the number of dim
+# fit_b
+# 
+# # plot solution
+# x_b <- fit_b$points[,1]
+# y_b <- fit_b$points[,2]
+# plot(x_b, y_b, xlab="Coordinate 1", ylab="Coordinate 2",
+#      main="Metric MDS - Bray", col = sample_data(ps)$W)
 
