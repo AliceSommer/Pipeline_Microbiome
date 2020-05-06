@@ -3,6 +3,7 @@ library(phyloseq); packageVersion("phyloseq")
 library(ggplot2); packageVersion("ggplot2")
 library(plyr); packageVersion("plyr")
 library(pldist)
+library(MiRKAT)
 
 ###############################################################################
 
@@ -81,6 +82,24 @@ x_uni <- fit_uni$points[,1]
 y_uni <- fit_uni$points[,2]
 plot(x_uni, y_uni, xlab="Coordinate 1", ylab="Coordinate 2",
      main="Metric MDS - Unifrac (unweighted) - pldist", col = sample_data(ps)$W)
+
+#### attention !! #### cannot test MiRKAT with W as phenotype because W used for the pairs 
+## dimension of D.unifrac is n_pair x n_pair
+
+#####################################
+##### Global hypothesis testing #####
+#####################################
+
+# omnibus test if multiple distance matrices ("Optimal MiRKAT")
+# otherwise MiRKAT
+unifracs <- UniFrac(ps, weighted=FALSE, normalized=FALSE, parallel=FALSE, fast=TRUE)
+unifrac_1 <- distance(ps, method="unifrac")
+K.unweighted = D2K(unifracs)
+
+# testing using a single Kernel
+MiRKAT(y = sample_data(ps)$W, X = NULL, Ks = K.unweighted, out_type = "D", 
+       method = "davies", returnKRV = TRUE, returnR2 = TRUE)
+
 
 ############################
 ##### Other distances ######
