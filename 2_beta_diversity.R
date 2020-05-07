@@ -122,8 +122,8 @@ MiRKAT(y = outcome, X = NULL, Ks = K.unweighted_Uuni, out_type = "D",
        method = "davies", returnKRV = TRUE, returnR2 = TRUE)
 
 ## omnibus test if multiple distance matrices ("Optimal MiRKAT")
-ps_clr <- transform_sample_counts(ps_prune, function(x){clr(x)})
-ps_comp <- transform_sample_counts(ps, function(x){x/sum(x)})
+ps_clr <- transform_sample_counts(ps_prune, function(x){x <- x + 0.5; clr(x)})
+ps_comp <- transform_sample_counts(ps_prune, function(x){x <- x + 0.5; x/sum(x)})
 
 # the available distance methods coded in distance
 dist_methods <- unlist(distanceMethodList)
@@ -134,19 +134,19 @@ euclidean_dist <- distance(ps_clr, method="euclidean")
 K.euclidean_dist <- D2K(as.matrix(euclidean_dist))
 
 # Bray
-bray_dist <- distance(ps_comp, method="bray") # RA
-K.bray_dist<- D2K(as.matrix(bray_dist))
+bray_dist <- distance(ps_clr, method="bray") 
+K.bray_dist <- D2K(as.matrix(bray_dist))
 
 # Jaccard 
-jaccard_dist <- distance(ps_comp, method="jaccard") # RA
+jaccard_dist <- distance(ps_clr, method="jaccard") 
 K.jaccard_dist <- D2K(as.matrix(jaccard_dist))
 
 # Kulczynski
-kulczynski_dist <- distance(ps_comp, method="kulczynski") # RA
+kulczynski_dist <- distance(ps_clr, method="kulczynski") 
 K.kulczynski_dist <- D2K(as.matrix(kulczynski_dist))
 
 # Gower
-gower_dist <- distance(ps_comp, method="gower") # RA
+gower_dist <- distance(ps_clr, method="gower")
 K.gower_dist <- D2K(as.matrix(gower_dist))
 
 ## testing using a several Kernels
