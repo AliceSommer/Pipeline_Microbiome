@@ -4,6 +4,7 @@ library(ggplot2); packageVersion("ggplot2")
 library(plyr); packageVersion("plyr")
 library(pldist)
 library(MiRKAT)
+library(compositions)
 
 ###############################################################################
 
@@ -33,15 +34,21 @@ ps <- phyloseq(otu_table(ASV_table, taxa_are_rows=FALSE),
                phy_tree(tGTR$tree))
 ps
 
+# locate the species that are totally absent in the matched data
+empty_species <- colSums(otu_table(ps))
+length(which(empty_species == 0))
+
+ps_prune <- prune_taxa(empty_species != 0, ps)
+
 ###########################################
 ##### Calculate distances with pldist #####
 ###########################################
 
 # Input: Notice that row names are sample IDs 
-paired.otus <- as(otu_table(ps), "matrix") 
+paired.otus <- as(otu_table(ps_prune), "matrix") 
 paired.otus[1:4,1:4]
 
-paired.meta <- sample_data(ps)[,c("pair_nb","ff4_prid","W")]
+paired.meta <- sample_data(ps_prune)[,c("pair_nb","ff4_prid","W")]
 colnames(paired.meta) <- c("subjID", "sampID", "time")
 paired.meta[1:4,]
 
@@ -68,20 +75,8 @@ res$type
 # LUniFrac
 D.unifrac <- LUniFrac(otu.tab = paired.otus, metadata = paired.meta, tree = tGTR$tree,
                            gam = c(0, 0.5, 1), paired = TRUE, check.input = TRUE)
-head(D.unifrac[, , "d_1"]) # gamma = 1 (quantitative paired transformation)
-head(D.unifrac[, , "d_UW"])  # unweighted LUniFrac (qualitative/binary paired transf.)]
-
-###########################################
-##### Low-dimensional representation ######
-###########################################
-fit_uni <- cmdscale(D.unifrac[, , "d_UW"],eig=TRUE, k=2) # k is the number of dim
-fit_uni
-
-# plot solution
-x_uni <- fit_uni$points[,1]
-y_uni <- fit_uni$points[,2]
-plot(x_uni, y_uni, xlab="Coordinate 1", ylab="Coordinate 2",
-     main="Metric MDS - Unifrac (unweighted) - pldist", col = sample_data(ps)$W)
+# head(D.unifrac[, , "d_1"]) # gamma = 1 (quantitative paired transformation)
+# head(D.unifrac[, , "d_UW"])  # unweighted LUniFrac (qualitative/binary paired transf.)]
 
 #### attention !! #### cannot test MiRKAT with W as trait/exposure because W used for the pairs 
 ## dimension of D.unifrac is n_pair x n_pair
@@ -92,16 +87,16 @@ K.unweighted <- D2K(D.unifrac[, , "d_UW"])
 id_pair_var <- data.frame(pair_nb = rownames(D.unifrac[, , "d_UW"]))
 head(id_pair_var)
 
-colnames(sample_data(ps))[grep("glu",colnames(sample_data(ps)))]
-table(sample_data(ps)$u3tdiabet)
+colnames(sample_data(ps_prune))[grep("glu",colnames(sample_data(ps)))]
+table(sample_data(ps_prune)$u3tdiabet)
 
-dat_dia_pair <- data.frame(sample_data(ps)[sample_data(ps)$W == 1,c("pair_nb","u3tdiabet")])
+dat_dia_pair <- data.frame(sample_data(ps_prune)[sample_data(ps_prune)$W == 1,c("pair_nb","u3tdiabet","u3csex")])
 
 id_pair_var <- merge(id_pair_var, dat_dia_pair, sort = FALSE,
                      by.x = "pair_nb", by.y = "pair_nb",all.x = TRUE)
 
 head(id_pair_var)
-
+dim(K.unweighted)
 # testing using a single Kernel
 MiRKAT(y = id_pair_var$u3tdiabet, X = NULL, Ks = K.unweighted, out_type = "D", 
        method = "davies", returnKRV = TRUE, returnR2 = TRUE)
@@ -112,46 +107,64 @@ MiRKAT(y = id_pair_var$u3tdiabet, X = NULL, Ks = K.unweighted, out_type = "D",
 ##### Global hypothesis testing #####
 #####################################
 
-# omnibus test if multiple distance matrices ("Optimal MiRKAT")
-# otherwise MiRKAT
-unifracs <- UniFrac(ps, weighted=FALSE, normalized=FALSE, parallel=FALSE, fast=TRUE)
+## MiRKAT
+unifracs <- UniFrac(ps_prune, weighted=FALSE, parallel=FALSE, fast=TRUE)
 unifracs_mat <- as.matrix(unifracs)
-K.unweighted <- D2K(unifracs_mat)
+# transform distance matrix to kernel
+K.unweighted_Uuni <- D2K(unifracs_mat)
 
-head(sample_data(ps)$W)
-outcome <- as.numeric(sample_data(ps)$W == 1)
+head(sample_data(ps_prune)$W)
+outcome <- as.numeric(sample_data(ps_prune)$W == 1)
 head(outcome)
 
-# testing using a single Kernel
-MiRKAT(y = outcome, X = NULL, Ks = K.unweighted, out_type = "D", 
+## testing using a single Kernel
+MiRKAT(y = outcome, X = NULL, Ks = K.unweighted_Uuni, out_type = "D", 
        method = "davies", returnKRV = TRUE, returnR2 = TRUE)
 
-############################
-##### Other distances ######
-############################
-# 
-# gower_dist <- pldist(paired.otus, paired.meta, paired = TRUE, binary = FALSE, 
-#                      method = "gower", clr = TRUE)$D
-# head(gower_dist)
-# 
-# fit <- cmdscale(gower_dist,eig=TRUE, k=2) # k is the number of dim
-# fit
-# 
-# # plot solution
-# x <- fit$points[,1]
-# y <- fit$points[,2]
-# plot(x, y, xlab="Coordinate 1", ylab="Coordinate 2",
-#      main="Metric MDS - Gower", col = sample_data(ps)$W)
-# 
-# bray_dist <- pldist(paired.otus, paired.meta, paired = TRUE, binary = FALSE, 
-#                      method = "bray", clr = TRUE)$D
-# 
-# fit_b <- cmdscale(bray_dist,eig=TRUE, k=2) # k is the number of dim
-# fit_b
-# 
-# # plot solution
-# x_b <- fit_b$points[,1]
-# y_b <- fit_b$points[,2]
-# plot(x_b, y_b, xlab="Coordinate 1", ylab="Coordinate 2",
-#      main="Metric MDS - Bray", col = sample_data(ps)$W)
+## omnibus test if multiple distance matrices ("Optimal MiRKAT")
+ps_clr <- transform_sample_counts(ps_prune, function(x){clr(x)})
+ps_comp <- transform_sample_counts(ps, function(x){x/sum(x)})
 
+# the available distance methods coded in distance
+dist_methods <- unlist(distanceMethodList)
+print(dist_methods)
+
+# Euclidean
+euclidean_dist <- distance(ps_clr, method="euclidean")
+K.euclidean_dist <- D2K(as.matrix(euclidean_dist))
+
+# Bray
+bray_dist <- distance(ps_comp, method="bray") # RA
+K.bray_dist<- D2K(as.matrix(bray_dist))
+
+# Jaccard 
+jaccard_dist <- distance(ps_comp, method="jaccard") # RA
+K.jaccard_dist <- D2K(as.matrix(jaccard_dist))
+
+# Kulczynski
+kulczynski_dist <- distance(ps_comp, method="kulczynski") # RA
+K.kulczynski_dist <- D2K(as.matrix(kulczynski_dist))
+
+# Gower
+gower_dist <- distance(ps_comp, method="gower") # RA
+K.gower_dist <- D2K(as.matrix(gower_dist))
+
+## testing using a several Kernels
+Ks = list(K.unweighted_Uuni = K.unweighted_Uuni, K.euclidean_dist = K.euclidean_dist, 
+          K.bray_dist = K.bray_dist, K.jaccard_dist = K.jaccard_dist, 
+          K.kulczynski_dist = K.kulczynski_dist, K.gower_dist = K.gower_dist)
+MiRKAT(y = outcome, Ks = Ks, X = NULL, out_type = "D", 
+       method = "davies", returnKRV = TRUE, returnR2 = TRUE)
+
+
+###########################################
+##### Low-dimensional representation ######
+###########################################
+fit_eu <- cmdscale(euclidean_dist,eig=TRUE, k=2) # k is the number of dim
+# fit_eu
+
+# plot solution
+x_eu <- fit_eu$points[,1]
+y_eu <- fit_eu$points[,2]
+plot(x_uni, y_uni, xlab="Coordinate 1", ylab="Coordinate 2",
+     main="Metric MDS - Unifrac (unweighted) - pldist", col = sample_data(ps)$W)
