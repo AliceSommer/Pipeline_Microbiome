@@ -108,10 +108,10 @@ MiRKAT(y = id_pair_var$u3tdiabet, X = NULL, Ks = K.unweighted, out_type = "D",
 #####################################
 
 ## MiRKAT
-unifracs <- UniFrac(ps_prune, weighted=FALSE, parallel=FALSE, fast=TRUE)
-unifracs_mat <- as.matrix(unifracs)
+u_unifrac <- UniFrac(ps_prune, weighted=FALSE, parallel=FALSE, fast=TRUE)
+unifrac_mat <- as.matrix(u_unifrac)
 # transform distance matrix to kernel
-K.unweighted_Uuni <- D2K(unifracs_mat)
+K.unweighted_uni <- D2K(unifrac_mat)
 
 head(sample_data(ps_prune)$W)
 outcome <- as.numeric(sample_data(ps_prune)$W == 1)
@@ -150,9 +150,9 @@ gower_dist <- distance(ps_clr, method="gower")
 K.gower_dist <- D2K(as.matrix(gower_dist))
 
 ## testing using a several Kernels
-Ks = list(K.unweighted_Uuni = K.unweighted_Uuni, K.euclidean_dist = K.euclidean_dist, 
-          K.bray_dist = K.bray_dist, K.jaccard_dist = K.jaccard_dist, 
-          K.kulczynski_dist = K.kulczynski_dist, K.gower_dist = K.gower_dist)
+Ks = list(u_unifrac = K.unweighted_uni, euclidean_dist = K.euclidean_dist, 
+          bray_dist = K.bray_dist, jaccard_dist = K.jaccard_dist, 
+          kulczynski_dist = K.kulczynski_dist, gower_dist = K.gower_dist)
 MiRKAT(y = outcome, Ks = Ks, X = NULL, out_type = "D", 
        method = "davies", returnKRV = TRUE, returnR2 = TRUE)
 
@@ -160,11 +160,43 @@ MiRKAT(y = outcome, Ks = Ks, X = NULL, out_type = "D",
 ###########################################
 ##### Low-dimensional representation ######
 ###########################################
-fit_eu <- cmdscale(euclidean_dist,eig=TRUE, k=2) # k is the number of dim
-# fit_eu
+dist_methods = c("unifrac","euclidean","bray","jaccard","kulczynski","gower")
 
-# plot solution
-x_eu <- fit_eu$points[,1]
-y_eu <- fit_eu$points[,2]
-plot(x_uni, y_uni, xlab="Coordinate 1", ylab="Coordinate 2",
-     main="Metric MDS - Unifrac (unweighted) - pldist", col = sample_data(ps)$W)
+plist <- vector("list", length(dist_methods))
+names(plist) = dist_methods
+for(i in dist_methods){
+  
+  # Calculate distance matrix
+  if(i == "unifrac"){
+    iDist <- distance(ps_prune, method=i)
+    }else{
+    iDist <- distance(ps_clr, method=i)
+    }
+  print(i)
+  # Calculate ordination
+  iMDS  <- ordinate(ps_clr, "MDS", distance=iDist)
+  ## Make plot
+  # Don't carry over previous plot (if error, p will be blank)
+  p <- NULL
+  # Create plot, store as temp variable, p
+  p <- plot_ordination(ps_prune, iMDS, color="W", shape="u3tdiabet")
+  # Add title to each plot
+  p <- p + ggtitle(paste("MDS using distance method ", i, sep=""))
+  # Save the graphic to file.
+  plist[[i]] = p
+}
+
+df = ldply(plist, function(x) x$data)
+names(df)[1] <- "distance"
+p = ggplot(df, aes(Axis.1, Axis.2, color=W))
+p = p + geom_point(size=3, alpha=0.5)
+p = p + facet_wrap(~distance, scales="free")
+p = p + ggtitle("MDS on various distance metrics for Enterotype dataset")
+p
+
+ggsave(file = 'plots_pipeline_microbiome/iMDS_plots.jpeg',
+       g1,
+       dpi=300,
+       width = 180,
+       height = 150,
+       units = "mm")
