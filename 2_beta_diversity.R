@@ -186,6 +186,8 @@ for(i in dist_methods){
   plist[[i]] = p
 }
 
+#### attention error because of the bray distance !!!!
+
 df = ldply(plist, function(x) x$data)
 names(df)[1] <- "distance"
 p = ggplot(df, aes(Axis.1, Axis.2, color=W))
