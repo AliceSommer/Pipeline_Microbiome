@@ -83,8 +83,30 @@ y_uni <- fit_uni$points[,2]
 plot(x_uni, y_uni, xlab="Coordinate 1", ylab="Coordinate 2",
      main="Metric MDS - Unifrac (unweighted) - pldist", col = sample_data(ps)$W)
 
-#### attention !! #### cannot test MiRKAT with W as phenotype because W used for the pairs 
+#### attention !! #### cannot test MiRKAT with W as trait/exposure because W used for the pairs 
 ## dimension of D.unifrac is n_pair x n_pair
+
+# try to check if influence on diabetes
+K.unweighted <- D2K(D.unifrac[, , "d_UW"])
+
+id_pair_var <- data.frame(pair_nb = rownames(D.unifrac[, , "d_UW"]))
+head(id_pair_var)
+
+colnames(sample_data(ps))[grep("glu",colnames(sample_data(ps)))]
+table(sample_data(ps)$u3tdiabet)
+
+dat_dia_pair <- data.frame(sample_data(ps)[sample_data(ps)$W == 1,c("pair_nb","u3tdiabet")])
+
+id_pair_var <- merge(id_pair_var, dat_dia_pair, sort = FALSE,
+                     by.x = "pair_nb", by.y = "pair_nb",all.x = TRUE)
+
+head(id_pair_var)
+
+# testing using a single Kernel
+MiRKAT(y = id_pair_var$u3tdiabet, X = NULL, Ks = K.unweighted, out_type = "D", 
+       method = "davies", returnKRV = TRUE, returnR2 = TRUE)
+
+#### maybe interesting for microbiome -> AP -> diabetes ####
 
 #####################################
 ##### Global hypothesis testing #####
@@ -93,13 +115,16 @@ plot(x_uni, y_uni, xlab="Coordinate 1", ylab="Coordinate 2",
 # omnibus test if multiple distance matrices ("Optimal MiRKAT")
 # otherwise MiRKAT
 unifracs <- UniFrac(ps, weighted=FALSE, normalized=FALSE, parallel=FALSE, fast=TRUE)
-unifrac_1 <- distance(ps, method="unifrac")
-K.unweighted = D2K(unifracs)
+unifracs_mat <- as.matrix(unifracs)
+K.unweighted <- D2K(unifracs_mat)
+
+head(sample_data(ps)$W)
+outcome <- as.numeric(sample_data(ps)$W == 1)
+head(outcome)
 
 # testing using a single Kernel
-MiRKAT(y = sample_data(ps)$W, X = NULL, Ks = K.unweighted, out_type = "D", 
+MiRKAT(y = outcome, X = NULL, Ks = K.unweighted, out_type = "D", 
        method = "davies", returnKRV = TRUE, returnR2 = TRUE)
-
 
 ############################
 ##### Other distances ######
