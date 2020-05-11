@@ -1,6 +1,8 @@
 library(phyloseq); packageVersion("phyloseq")
 library(ggplot2); packageVersion("ggplot2")
 library(breakaway)
+library(dplyr)
+library(DivNet)
 
 ###############################################################################
 
@@ -27,44 +29,19 @@ ps <- phyloseq(otu_table(ASV_table, taxa_are_rows=FALSE),
                tax_table(taxon_assign))
 ps
 
+# locate the species that are totally absent in the matched data
+empty_species <- colSums(otu_table(ps))
+length(which(empty_species == 0))
+
+ps_prune <- prune_taxa(empty_species != 0, ps)
+
 ### 1. ESTIMATE THE TOTAL DIVERSITY FOR EACH SAMPLE ###
-ba <- breakaway(ps)
+ba <- breakaway(ps_prune)
 # ba <- breakaway_nof1(ps)
 ba[[1]]
-plot(ba, ps, color = "W") 
+plot(ba, ps_prune, color = "W") 
 
-# try the objective bayes method
-frq_table <- build_frequency_count_tables(otu_table(ps))
-
-dim(table(frq_table[[4]]))
-
-length_freq <- NULL
-sample_id <- NULL
-
-for(i in 1:486){
-  sample_id <- c(sample_id,i)
-  length_freq <- c(length_freq,length(frq_table[[i]]$Freq))
-}
-
-breakaway(frq_table[[1]])
-
-## retrieve estimates and ses of ob_nb
-# ob_nb_estimates <- NULL
-# ob_nb_ses <- NULL
-# 
-# for (i in 1:dim(sample_data(ps))[1]) {
-#   ob_nb <- objective_bayes_negbin(frq_table[[i]], output = F, plot = F, answers = T)
-#   ob_nb_estimates[i] <- ob_nb$est
-#   ob_nb_ses[i] <- ob_nb$semeanest
-# }
-# 
-# head(ob_nb_estimates)
-# head(ob_nb_ses)
-# 
 x = cbind(1, sample_data(ps)$W)
-# 
-# reg <- betta(ob_nb_estimates, ob_nb_ses, X = x)
-# reg
 
 ## retrieve estimates and ses of breakaway
 break_estimates <- NULL
@@ -102,8 +79,6 @@ reg_2
 
 
 ### betta (tweeked solver) ###
-
-library(dplyr)
 
 chats = data_check[,1]
 ses = data_check[,2]
@@ -194,4 +169,35 @@ initial_est = NULL
 
 mytable
 
-
+# # try the objective bayes method
+# frq_table <- build_frequency_count_tables(otu_table(ps))
+# 
+# dim(table(frq_table[[4]]))
+# 
+# length_freq <- NULL
+# sample_id <- NULL
+# 
+# for(i in 1:486){
+#   sample_id <- c(sample_id,i)
+#   length_freq <- c(length_freq,length(frq_table[[i]]$Freq))
+# }
+# 
+# breakaway(frq_table[[1]])
+# 
+# # retrieve estimates and ses of ob_nb
+# ob_nb_estimates <- NULL
+# ob_nb_ses <- NULL
+# 
+# for (i in 1:dim(sample_data(ps))[1]) {
+#   ob_nb <- objective_bayes_negbin(frq_table[[i]], output = F, plot = F, answers = T)
+#   ob_nb_estimates[i] <- ob_nb$est
+#   ob_nb_ses[i] <- ob_nb$semeanest
+# }
+# 
+# head(ob_nb_estimates)
+# head(ob_nb_ses)
+# 
+# x = cbind(1, sample_data(ps)$W)
+# 
+# reg <- betta(ob_nb_estimates, ob_nb_ses, X = x)
+# reg
