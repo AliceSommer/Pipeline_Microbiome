@@ -35,47 +35,30 @@ length(which(empty_species == 0))
 ps_prune <- prune_taxa(empty_species != 0, ps)
 
 ### 1. ESTIMATE THE TOTAL DIVERSITY FOR EACH SAMPLE ###
+rich <- sample_richness(ps_prune)
 ba <- breakaway(ps_prune)
-# ba <- breakaway_nof1(ps)
+# ba <- breakaway_nof1(ps_prune)
 ba[[1]]
 plot(ba, ps_prune, color = "W") 
 
 x = cbind(1, sample_data(ps)$W)
 
-## retrieve estimates and ses of breakaway
-break_estimates <- NULL
-break_ses <- NULL
+head(summary(ba)$estimate)
+head(summary(ba)$error)
 
-for (i in 1:dim(sample_data(ps))[1]) {
-  est = ba[[i]]
-  break_estimates[i] <- est$estimate
-  break_ses[i] <- est$error
-}
+data_check <- data.frame(summary(ba)$estimate, summary(ba)$error, W = sample_data(ps)$W)
+head(data_check)
 
-head(break_estimates)
-head(break_ses)
-
+sum(duplicated(data_check))
+  
 ### 2. USE BETTA FUNCTION ###
-summary(lm(break_estimates ~ sample_data(ps)$W))
+summary(lm(summary(rich)$estimate ~ sample_data(ps)$W))
 
-reg <- betta(break_estimates, break_ses, X = x)
+reg <- betta(summary(rich)$estimate,
+             summary(ba)$error, X = x)
 reg
 
 head(cbind(break_estimates, break_ses, sample_data(ps)$W), u3tbmi, u3talteru)
-
-data_check <- data.frame(break_estimates, break_ses, W = sample_data(ps)$W)
-data_X_W <- data_check[!(data_check[,2] < 0.43),]
-head(data_X_W)
-dim(data_X_W)
-
-# there are two samples that are not unique !
-
-# run regression when removes
-reg_2 <- betta(data_X_W[,1], data_X_W[,2], 
-               # X = cbind(1, data_check[,3], data_check[,4], data_check[,5]))
-               X = cbind(1, data_X_W[,3]))
-reg_2
-
 
 ### betta (tweeked solver) ###
 
@@ -165,38 +148,34 @@ initial_est = NULL
   mytable$r_squared_wls <- 1 - sum((chats_effective - X_effective %*%
                                       beta)^2)/(sum(chats_effective^2) - n * (mean(chats_effective))^2)
 
-
 mytable
 
-# # try the objective bayes method
-# frq_table <- build_frequency_count_tables(otu_table(ps))
-# 
-# dim(table(frq_table[[4]]))
-# 
-# length_freq <- NULL
-# sample_id <- NULL
-# 
-# for(i in 1:486){
-#   sample_id <- c(sample_id,i)
-#   length_freq <- c(length_freq,length(frq_table[[i]]$Freq))
-# }
-# 
-# breakaway(frq_table[[1]])
-# 
-# # retrieve estimates and ses of ob_nb
-# ob_nb_estimates <- NULL
-# ob_nb_ses <- NULL
-# 
-# for (i in 1:dim(sample_data(ps))[1]) {
-#   ob_nb <- objective_bayes_negbin(frq_table[[i]], output = F, plot = F, answers = T)
-#   ob_nb_estimates[i] <- ob_nb$est
-#   ob_nb_ses[i] <- ob_nb$semeanest
-# }
-# 
-# head(ob_nb_estimates)
-# head(ob_nb_ses)
-# 
-# x = cbind(1, sample_data(ps)$W)
-# 
-# reg <- betta(ob_nb_estimates, ob_nb_ses, X = x)
-# reg
+sample_data(ps_prune)$ba_estimate <- summary(ba)$estimate
+sample_data(ps_prune)$alpha_ci_low <- summary(ba)$lower
+sample_data(ps_prune)$alpha_ci_high <- summary(ba)$upper
+
+dat_plot = sample_data(ps_prune)
+
+# order plot
+dat_plot$pair_nb <- factor(dat_plot$pair_nb, levels = dat_plot$pair_nb[dat_plot$W == 1][order(dat_plot$ba_estimate[dat_plot$W == 1])])
+dat_plot$pair_nb  # notice the changed order of factor levels
+
+ggplot(dat_plot, 
+       aes(color = factor(W), y = ba_estimate, x = pair_nb)) +
+  geom_point() + 
+  geom_errorbar(aes(ymin=alpha_ci_low, ymax=alpha_ci_high), width=.1) +
+  ylab('Breakaway richness estimate') +
+  scale_x_discrete(name = "") +
+  scale_colour_manual(values = c("gray","blue4"), limits=c("1","0"), 
+                      name ="Long-term PM2.5", 
+                      labels = c("Low (<= 11)","High (>= 12)")) +
+  theme(axis.text.x=element_text(angle =- 70, vjust = 0.5)) + ylim(c(30,300))
+
+g_ba <- ggplot(dat_plot, aes(color = factor(W), y = ba_estimate)) +
+  geom_boxplot(alpha = .5) + ylab('Breakaway richness estimate') +
+  scale_x_discrete(name = "") +
+  scale_colour_manual(values = c("gray","blue4"), limits=c("1","0"), 
+                      name ="Long-term PM2.5", 
+                      labels = c("Low (<= 11)","High (>= 12)")) +
+  theme(legend.position = "top", legend.key.size =  unit(0.1, "in")) +
+  guides(color=guide_legend(nrow=2,byrow=TRUE))

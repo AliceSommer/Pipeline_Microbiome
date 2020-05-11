@@ -1,7 +1,5 @@
 library(phyloseq); packageVersion("phyloseq")
 library(ggplot2); packageVersion("ggplot2")
-library(breakaway)
-library(dplyr)
 library(DivNet)
 
 ###############################################################################
@@ -34,3 +32,12 @@ empty_species <- colSums(otu_table(ps))
 length(which(empty_species == 0))
 
 ps_prune <- prune_taxa(empty_species != 0, ps)
+
+divnet_phylum <- divnet(tax_glom(ps_prune, taxrank="Phylum"),
+                         X = "W",
+                         ncores = 4)
+divnet_phylum
+
+testDiversity(divnet_phylum, "shannon")
+
+plot(divnet_phylum)
