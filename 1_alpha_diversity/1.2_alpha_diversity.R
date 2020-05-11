@@ -10,6 +10,8 @@ setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome')
 # load microbiome data
 ASV_table <- readRDS('dada2output/seqtab2020.rds')
 taxon_assign <- readRDS('dada2output/taxa2020.rds')
+# load phylogenetic information
+load("dada2output/phylotree2020.phy")
 
 # load sample/matched_data
 load('dat_matched_PM25.RData')
@@ -24,7 +26,8 @@ rownames(sample_df) <- samples.out
 # create a phyloseq object
 ps <- phyloseq(otu_table(ASV_table, taxa_are_rows=FALSE),
                sample_data(sample_df),
-               tax_table(taxon_assign))
+               tax_table(taxon_assign),
+               phy_tree(tGTR$tree))
 ps
 
 # locate the species that are totally absent in the matched data
@@ -33,7 +36,10 @@ length(which(empty_species == 0))
 
 ps_prune <- prune_taxa(empty_species != 0, ps)
 
-divnet_phylum <- divnet(tax_glom(ps_prune, taxrank="Phylum"),
+# agglomerate data to family level
+ps_fam <- tax_glom(ps_prune, taxrank="Family")
+
+divnet_phylum <- divnet(ps_fam,
                          X = "W",
                          ncores = 4)
 divnet_phylum
