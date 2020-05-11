@@ -26,7 +26,14 @@ ps <- phyloseq(otu_table(ASV_table, taxa_are_rows=FALSE),
                tax_table(taxon_assign))
 ps
 
-ps = tax_glom(ps, "Family", NArm = FALSE)
+# locate the species that are totally absent in the matched data
+empty_species <- colSums(otu_table(ps))
+length(which(empty_species == 0))
+
+ps_prune <- prune_taxa(empty_species != 0, ps)
+
+ps = ps_prune
+# ps = tax_glom(ps_prune, "Genus", NArm = FALSE)
 
 # Filter the data
 n<-dim(otu_table(ps))[1]
@@ -55,33 +62,33 @@ clog_TX <- log_x-1/p*rowSums(log_x)%*%matrix(1,1,p)
 clog_TY <- log_y-1/p*rowSums(log_y)%*%matrix(1,1,p)
 
 # Mean
-x_mean <- colSums(x)/nx
-y_mean <- colSums(y)/ny
-
-log_x_mean <- colSums(log_x)/nx
-log_y_mean <- colSums(log_y)/ny
+# x_mean <- colSums(x)/nx
+# y_mean <- colSums(y)/ny
+# 
+# log_x_mean <- colSums(log_x)/nx
+# log_y_mean <- colSums(log_y)/ny
 
 clr_x_mean <- colSums(clog_TX)/nx
 clr_y_mean <- colSums(clog_TY)/ny
 
 # Variance
-x_var <- diag(var(x))*(nx-1)/nx
-y_var <- diag(var(y))*(ny-1)/ny
-x_stat_var <- (x_var*nx + y_var*ny)/(nx*ny)
-
-log_x_var <- diag(var(log_x))*(nx-1)/nx
-log_y_var <- diag(var(log_y))*(ny-1)/ny
-log_x_stat_var <- (log_x_var*nx + log_y_var*ny)/(nx*ny)
+# x_var <- diag(var(x))*(nx-1)/nx
+# y_var <- diag(var(y))*(ny-1)/ny
+# x_stat_var <- (x_var*nx + y_var*ny)/(nx*ny)
+# 
+# log_x_var <- diag(var(log_x))*(nx-1)/nx
+# log_y_var <- diag(var(log_y))*(ny-1)/ny
+# log_x_stat_var <- (log_x_var*nx + log_y_var*ny)/(nx*ny)
 
 clr_x_var <- diag(var(clog_TX))*(nx-1)/nx
 clr_y_var <- diag(var(clog_TY))*(ny-1)/ny
 clr_x_stat_var <- (clr_x_var*nx + clr_y_var*ny)/(nx*ny)
 
 # p-values
-x_stat <- max((x_mean/sqrt(x_stat_var) - y_mean/sqrt(x_stat_var))^2)
-p_x <- 1-exp(-1/sqrt(pi)*exp(-(x_stat-(2*log(p)-log(log(p))))/2))
-log_x_stat <- max((log_x_mean/sqrt(log_x_stat_var) - log_y_mean/sqrt(log_x_stat_var))^2)
-p_logx <- 1-exp(-1/sqrt(pi)*exp(-(log_x_stat-(2*log(p)-log(log(p))))/2))
+# x_stat <- max((x_mean/sqrt(x_stat_var) - y_mean/sqrt(x_stat_var))^2)
+# p_x <- 1-exp(-1/sqrt(pi)*exp(-(x_stat-(2*log(p)-log(log(p))))/2))
+# log_x_stat <- max((log_x_mean/sqrt(log_x_stat_var) - log_y_mean/sqrt(log_x_stat_var))^2)
+# p_logx <- 1-exp(-1/sqrt(pi)*exp(-(log_x_stat-(2*log(p)-log(log(p))))/2))
 clr_x_stat <- max((clr_x_mean/sqrt(clr_x_stat_var) - clr_y_mean/sqrt(clr_x_stat_var))^2)
 p_clrx <- 1-exp(-1/sqrt(pi)*exp(-(clr_x_stat-(2*log(p)-log(log(p))))/2))
 

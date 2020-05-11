@@ -118,7 +118,7 @@ outcome <- as.numeric(sample_data(ps_prune)$W == 1)
 head(outcome)
 
 ## testing using a single Kernel
-MiRKAT(y = outcome, X = NULL, Ks = K.unweighted_Uuni, out_type = "D", 
+MiRKAT(y = outcome, X = NULL, Ks = K.unweighted_uni, out_type = "D", 
        method = "davies", returnKRV = TRUE, returnR2 = TRUE)
 
 ## omnibus test if multiple distance matrices ("Optimal MiRKAT")
