@@ -9,16 +9,16 @@ library(compositions)
 ###############################################################################
 
 # set working directory
-setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome')
+setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE')
 
 # load microbiome data
-ASV_table <- readRDS('dada2output/seqtab2020.rds')
-taxon_assign <- readRDS('dada2output/taxa2020.rds')
+ASV_table <- readRDS('data_pipeline_microbiome/dada2output/seqtab2020.rds')
+taxon_assign <- readRDS('data_pipeline_microbiome/dada2output/taxa2020.rds')
 # load phylogenetic information
-load("dada2output/phylotree2020.phy")
+load("data_pipeline_microbiome/dada2output/phylotree2020.phy")
 
 # load sample/matched_data
-load('dat_matched_PM25.RData')
+load('data_pipeline_microbiome/dat_matched_PM25.RData')
 
 ###############################################################################
 
@@ -122,6 +122,7 @@ MiRKAT(y = outcome, X = NULL, Ks = K.unweighted_Uuni, out_type = "D",
        method = "davies", returnKRV = TRUE, returnR2 = TRUE)
 
 ## omnibus test if multiple distance matrices ("Optimal MiRKAT")
+
 ps_clr <- transform_sample_counts(ps_prune, function(x){x <- x + 0.5; clr(x)})
 ps_comp <- transform_sample_counts(ps_prune, function(x){x <- x + 0.5; x/sum(x)})
 
@@ -160,7 +161,8 @@ MiRKAT(y = outcome, Ks = Ks, X = NULL, out_type = "D",
 ###########################################
 ##### Low-dimensional representation ######
 ###########################################
-dist_methods = c("unifrac","euclidean","bray","jaccard","kulczynski","gower")
+# dist_methods = c("unifrac","euclidean","bray","jaccard","kulczynski","gower")
+dist_methods = c("unifrac","euclidean","jaccard","gower") # without bray
 
 plist <- vector("list", length(dist_methods))
 names(plist) = dist_methods
@@ -191,13 +193,13 @@ for(i in dist_methods){
 df = ldply(plist, function(x) x$data)
 names(df)[1] <- "distance"
 p = ggplot(df, aes(Axis.1, Axis.2, color=W))
-p = p + geom_point(size=3, alpha=0.5)
+p = p + geom_point(size=1, alpha=0.5)
 p = p + facet_wrap(~distance, scales="free")
-p = p + ggtitle("MDS on various distance metrics for Enterotype dataset")
+p = p + ggtitle("MDS on various distance metrics (bray and kulczynski missing)")
 p
 
 ggsave(file = 'plots_pipeline_microbiome/iMDS_plots.jpeg',
-       g1,
+       p,
        dpi=300,
        width = 180,
        height = 150,
