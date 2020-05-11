@@ -2,7 +2,6 @@ library(phyloseq); packageVersion("phyloseq")
 library(ggplot2); packageVersion("ggplot2")
 library(breakaway)
 library(dplyr)
-library(DivNet)
 
 ###############################################################################
 
