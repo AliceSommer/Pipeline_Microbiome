@@ -372,7 +372,6 @@ for (i in 1:N_matched){
   
   matched_df = rbind(matched_df,treated_units[pairs_list[[i]][1],])
   matched_df = rbind(matched_df,control_units[pairs_list[[i]][2],])
-  total_nb_match = total_nb_match + 1
   cat("\n-------------------- Matched pair", total_nb_match,"--------------------\n")
   print(treated_units[pairs_list[[i]][1],relevant_fields])
   print(control_units[pairs_list[[i]][2],relevant_fields])
