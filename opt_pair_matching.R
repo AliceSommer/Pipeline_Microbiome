@@ -8,13 +8,13 @@ library(igraph)
 ###############################################################################
 
 # set working directory
-setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome')
+setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE')
 
 # load data formated in NOV18 
-load('dat_transformed_NOV18.RData')
+load('/data_pipeline_microbiome/dat_transformed_NOV18.RData')
 
 # download long-term exposure data 
-dat_pollution = read.sas7bdat('pv_14117g_sommer_gc_20180806.sas7bdat')
+dat_pollution = read.sas7bdat('/data_pipeline_microbiome/pv_14117g_sommer_gc_20180806.sas7bdat')
 head(dat_pollution)
 
 # processing
@@ -25,15 +25,14 @@ data_pollution = merge(dat_transformed, dat_pollution,
                        by.x = 'ff4_prid', by.y = 'ff4_labid', all.y = TRUE)
 
 hist(data_pollution$GC_PM25_14, main = "", xlab = "Long-term PM2.5", breaks = 40)
-abline(v=11, col="blue")
-text(10.7, 160, "25%",
+abline(v=10.3, col="blue")
+text(10.7, 160, "10%",
      cex = .8)
-abline(v=12.2, col="blue")
-text(12.7, 160, "75%",
+abline(v=13, col="blue")
+text(13.5, 160, "90%",
      cex = .8)
 
-
-quantile(data_pollution$GC_PM25_14) # 11 and 12
+quantile(data_pollution$GC_PM25_14, prob = seq(0, 1, .10)) 
 
 ######################
 # Exclusion criteria #
@@ -44,13 +43,12 @@ dat_excl_temp1 <- data_pollution[(data_pollution$u3tmabio_j01 %in% 0) & (data_po
 # cancer of disgestive organ
 dat_excl_temp2 <- dat_excl_temp1[!(dat_excl_temp1$u3c039as6 %in% c('C15','C16','C17','C18','C25','C26') | dat_excl_temp1$lca_icd1_sf14 %in% c('C15','C16','C17','C18','C20','C21','C25')), ]
 
-# create exposure variable
-quantile(dat_excl_temp2$GC_PM25_14)
-
-data = dat_excl_temp2
+# prepare the before matching data
+data <- dat_excl_temp2
+# create the exposure variable
 data$W <- NA
-data[data$GC_PM25_14 >= 12,]$W <- 0
-data[data$GC_PM25_14 <= 11,]$W <- 1
+data[data$GC_PM25_14 >= 13,]$W <- 0
+data[data$GC_PM25_14 <= 10.3,]$W <- 1
 data <- subset(data,W!="NA")
 dim(data)
 table(data$W)
@@ -65,7 +63,7 @@ colnames_covs = c("u3talteru", "u3tbmi", "u3csex",
                   "u3tphys", "u3talkkon", "u3tedyrs",
                   #"SeasonSummer", "SeasonSpring", "SeasonWinter", "SeasonFall",
                   "u3tsysmm", "u3tdiamm", "u3lk_chola", "u3lk_hdla", "u3lk_ldla" , "u3lk_tria",
-                  "u3tmi", "u3tap", "u3trose", "u3tschl", "u3tca")
+                  "u3tmi", "u3tap", "u3tschl", "u3tca")
 
 balance.plot <- function(d, cov.names = NULL, d2= NULL, main="", left.mar=1.5, right.mar=.1, bottom.mar=.8, top.mar=NULL, xlim=NULL, ...) {
   #d is a vector of differences (probably standardized)
@@ -206,7 +204,7 @@ g_lab <- ggplot(dat_melt_cont_1, aes(x=value)) +
 
 grep('u3tmi', colnames(data)); grep('u3tca',colnames(data))
 
-dat_melt_bin2 = melt(data, id.vars = "W", measure.vars = c(49,52:56))
+dat_melt_bin2 = melt(data, id.vars = "W", measure.vars = c(49,52,53,55,56))
 
 g_disease <- ggplot(dat_melt_bin2, aes(x = factor(W), fill = factor(value))) +
   geom_bar(position = "fill") + facet_wrap(~variable, nrow = 1) +
@@ -252,18 +250,19 @@ thresholds = rep(list(Inf),ncol(data_match))
 names(thresholds) = colnames(data_match)
 # set particular values
 
-# thresholds$u3talkkon = 25
-thresholds$u3tbmi = 2
+thresholds$u3talkkon = 25
+thresholds$u3tbmi = 4
 thresholds$u3tcigsmk = 0
-thresholds$u3tberufb = 1 # education
+# thresholds$u3tberufb = 1 # education
 # thresholds$u3tedyrs = 3
 # thresholds$u3tbmiwho = 0
 # #thresholds$u3twhrat = 0 ### waist-hip-ratio
 thresholds$u3talteru = 5
-# thresholds$u3tdiabet = 0
-# thresholds$u3tsysmm = 20
+thresholds$u3tdiabet = 0
+# thresholds$u3tsysmm = 25
 # thresholds$u3tdiamm = 20
 # thresholds$u3lk_ldla = 50
+# thresholds$u3lk_hdla = 25
 thresholds$u3csex = 0
 thresholds$u3tphys = 0 ### Aktif, Inaktif
 # thresholds$u3twhom1 = 0 ### Hypertonieklassifiaktion kategorisch; 1 = Normoton (<140/90 mmHg)
@@ -271,7 +270,7 @@ thresholds$u3tphys = 0 ### Aktif, Inaktif
 # thresholds$u3tap = 0 
 # thresholds$u3tca = 0 
 # thresholds$u3tschl = 0 
-thresholds$Season = 0 
+# thresholds$Season = 0 
 
 # 
 # ## MEDICINE ## 
@@ -468,7 +467,7 @@ g_after <- grid.arrange(arrangeGrob(g_age, g_bmi, g_sex, g_alcohol, g_phys, g_sm
                                     g_phys_after, g_smoke_after, g_educ_after, g_season_after,
                                     top="After Matching", ncol = 2), ncol = 2)
 
-# ggsave(file = '/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/Microbiome\ 2020/1.\ January/environment_matching/PM25_balance.jpeg',
+# ggsave(file = 'plots_pipeline_microbiome/PM25_balance.jpeg',
 #        g_after,
 #        dpi=300,
 #        width = 300,
@@ -495,7 +494,7 @@ g_lab_after <- ggplot(dat_melt_cont_1_after, aes(x=value)) +
 
 grep('u3tmi', colnames(matched_df)); grep('u3tca',colnames(matched_df))
 
-dat_melt_bin2_after = melt(matched_df, id.vars = "W", measure.vars = c(49,52:56))
+dat_melt_bin2_after = melt(matched_df, id.vars = "W", measure.vars = c(49,52,53,55,56))
 
 g_disease_after <- ggplot(dat_melt_bin2_after, aes(x = factor(W), fill = factor(value))) +
   geom_bar(position = "fill") + facet_wrap(~variable, nrow = 1) +
@@ -510,7 +509,7 @@ g_after_other <- grid.arrange(arrangeGrob(g_lab, g_disease,
                               arrangeGrob(g_lab_after, g_disease_after,
                                           top="After Matching", nrow = 2), ncol = 2)
 
-# ggsave(file = '/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/Microbiome\ 2020/1.\ January/environment_matching/PM25_balance_other.jpeg',
+# ggsave(file = 'plots_pipeline_microbiome/M25_balance_other.jpeg',
 #        g_after_other,
 #        dpi=300,
 #        width = 300,
@@ -533,4 +532,4 @@ ggplot(dat_melt_bin3_after, aes(x = factor(W), fill = factor(value))) +
 ################
 # SAVE DATASET #
 ################
-# save(matched_df, file = '/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/Microbiome\ 2020/1.\ January/environment_matching/dat_matched_PM25.RData')
+# save(matched_df, file = 'data_pipeline_microbiome/dat_matched_PM25_bis.RData')
