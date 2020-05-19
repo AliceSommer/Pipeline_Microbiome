@@ -533,3 +533,41 @@ ggplot(dat_melt_bin3_after, aes(x = factor(W), fill = factor(value))) +
 # SAVE DATASET #
 ################
 # save(matched_df, file = 'data_pipeline_microbiome/dat_matched_PM25_bis.RData')
+
+#######################
+#### RANDOMIZATION ####
+#######################
+
+n_total = length(matched_df$W)
+n_treated  = sum(matched_df$W)
+2^n_treated
+
+table(matched_df$W)
+head(matched_df$W)
+head(matched_df$pair_nb)
+
+# generate a matrix with some possible randomizations (W_sim)
+n_col = 10^6
+W_sim = matrix(NA, ncol=n_col, nrow=n_total)
+
+for(t in 1:n_col){
+  
+  W_sim_to_fill = NULL
+  flip_coin <- rbinom(n=n_treated,prob=.5,size=1)
+  W_sim_to_fill[seq(from = 1, to = n_total - 1, by = 2)] <- flip_coin
+  W_sim_to_fill[seq(from = 2, to = n_total, by = 2)] <- 1 - flip_coin
+  
+  W_sim[,t] = W_sim_to_fill
+}
+
+W_unique <- unique(W_sim, MARGIN = 2)
+dim(W_unique)
+
+#####################
+## SAVE W_balanced ##
+#####################
+
+# reorder the data by ff4_prid
+W_paired <- W_unique[order(matched_df$ff4_prid),]
+
+# save(W_paired, file = "data_pipeline_microbiome/W_paired_PM25.Rdata")
