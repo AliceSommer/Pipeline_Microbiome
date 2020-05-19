@@ -2,6 +2,7 @@ library(phyloseq); packageVersion("phyloseq")
 library(ggplot2); packageVersion("ggplot2")
 library(breakaway)
 library(dplyr)
+library(gridExtra)
 
 ###############################################################################
 
@@ -13,10 +14,21 @@ ASV_table <- readRDS('dada2output/seqtab2020.rds')
 taxon_assign <- readRDS('dada2output/taxa2020.rds')
 
 # load sample/matched_data
-load('dat_matched_PM25.RData')
+load('dat_matched_PM25_bis.RData')
 
+# load W matrix for randomization test
+load("W_paired_PM25.Rdata")
+
+# load original dataset (try other Ws)
+# df <- read.csv('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/KORA\ DATA/Microbiome_data/KORA_microbiome_variables.csv')
+
+# matched AP data
 sample_df <- matched_df[order(matched_df$ff4_prid),]
 sample_df$W <- as.factor(sample_df$W)
+# # "other" data
+# sample_df <- df[order(df$ff4_prid),]
+# sample_df$W <- as.factor(as.numeric(sample_df$u3tcigsmk == 1))
+
 samples.out <- as.character(sample_df$ff4_prid)
 rownames(sample_df) <- samples.out
 
@@ -39,28 +51,71 @@ rich <- sample_richness(ps_prune)
 ba <- breakaway(ps_prune)
 # ba <- breakaway_nof1(ps_prune)
 ba[[1]]
-plot(ba, ps_prune, color = "W") 
+# plot(ba, ps_prune, color = "W") 
 
-x = cbind(1, sample_data(ps)$W)
+sample_data(ps_prune)[,"breakaway"] <- summary(ba)$estimate
+
+g_PM <- ggplot(sample_data(ps_prune), aes(color = factor(W), y = breakaway)) +
+  geom_boxplot(alpha = .5) + ylab('breakaway richness measure') +
+  scale_x_discrete(name = "") +
+  scale_colour_manual(values = c("gray","blue4"), limits=c("1","0"), name ="Long-term PM2.5", labels = c("Low","High")) +
+  theme(legend.position = "top", legend.key.size =  unit(0.1, "in")) +
+  guides(color=guide_legend(nrow=2,byrow=TRUE))
+
+g_PM_sex <- ggplot(sample_data(ps_prune), aes(x = factor(u3csex), y = breakaway, color = factor(W))) +
+  geom_boxplot(alpha = .5) + ylab('breakaway richness measure') +
+  scale_x_discrete(name = "Sex", limits=c("0","1"), labels = c("Female", "Male")) +
+  scale_colour_manual(values = c("gray","blue4"), limits=c("1","0"), name ="Long-term PM2.5", labels = c("Low","High")) +
+  theme(legend.position = "top", legend.key.size =  unit(0.1, "in")) +
+  guides(color=guide_legend(nrow=2,byrow=TRUE))
+
+g_arrange <- grid.arrange(g_PM,g_PM_sex, nrow = 1)
+
+x <- cbind(1, sample_data(ps_prune)$W, sample_data(ps_prune)$u3csex, sample_data(ps_prune)$u3tcigsmk1)
 
 head(summary(ba)$estimate)
 head(summary(ba)$error)
+  
+### 2. USE BETTA FUNCTION ###
+reg <- betta(summary(rich)$estimate,
+             summary(ba)$error, X = x)
+reg$table
+estim_obs <- reg$table[2,1]
 
+### 3. PERFORM A RANDOMIZATION TEST ###
+dim(W_paired)
+
+# set the number of randomizations
+nrep <- ncol(W_paired)/100
+
+# create a matrix where the t_rand will be saved
+t_array <- NULL
+
+for(i in 1:nrep){
+  print(i)
+  x = cbind(1, W_paired[,i], 
+             sample_data(ps_prune)$u3csex, 
+             sample_data(ps_prune)$u3tcigsmk1)
+  
+  reg = betta(summary(rich)$estimate,
+               summary(ba)$error, X = x)
+  
+  # fill t_array
+  t_array[i] = reg$table[2,1] 
+}
+
+## calculate p_value
+p_value <- mean(t_array >= estim_obs)
+p_value
+hist(t_array, breaks = 30)
+
+##############################
+### betta (tweeked solver) ###
+##############################
 data_check <- data.frame(summary(ba)$estimate, summary(ba)$error, W = sample_data(ps)$W)
 head(data_check)
 
 sum(duplicated(data_check))
-  
-### 2. USE BETTA FUNCTION ###
-summary(lm(summary(rich)$estimate ~ sample_data(ps)$W))
-
-reg <- betta(summary(rich)$estimate,
-             summary(ba)$error, X = x)
-reg
-
-head(cbind(break_estimates, break_ses, sample_data(ps)$W), u3tbmi, u3talteru)
-
-### betta (tweeked solver) ###
 
 chats = data_check[,1]
 ses = data_check[,2]
