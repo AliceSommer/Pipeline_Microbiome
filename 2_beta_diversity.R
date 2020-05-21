@@ -2,7 +2,6 @@
 library(phyloseq); packageVersion("phyloseq")
 library(ggplot2); packageVersion("ggplot2")
 library(plyr); packageVersion("plyr")
-library(pldist)
 library(MiRKAT)
 library(compositions)
 
@@ -18,7 +17,10 @@ taxon_assign <- readRDS('data_pipeline_microbiome/dada2output/taxa2020.rds')
 load("data_pipeline_microbiome/dada2output/phylotree2020.phy")
 
 # load sample/matched_data
-load('data_pipeline_microbiome/dat_matched_PM25.RData')
+load('data_pipeline_microbiome/dat_matched_PM25_bis.RData')
+
+# load W matrix for randomization test
+load("data_pipeline_microbiome/W_paired_PM25.Rdata")
 
 ###############################################################################
 
@@ -40,69 +42,6 @@ length(which(empty_species == 0))
 
 ps_prune <- prune_taxa(empty_species != 0, ps)
 
-###########################################
-##### Calculate distances with pldist #####
-###########################################
-
-# Input: Notice that row names are sample IDs 
-paired.otus <- as(otu_table(ps_prune), "matrix") 
-paired.otus[1:4,1:4]
-
-paired.meta <- sample_data(ps_prune)[,c("pair_nb","ff4_prid","W")]
-colnames(paired.meta) <- c("subjID", "sampID", "time")
-paired.meta[1:4,]
-
-# Transformation function 
-otu.data <- data_prep(paired.otus, paired.meta, paired = TRUE, pseudoct = NULL)
-otu.data$otu.props[1:3,1:3]  # OTU proportions 
-otu.data$otu.clr[1:3,1:3]    # CLR-transformed proportions
-res <- pltransform(otu.data, paired = TRUE, norm = TRUE)
-
-# Binary transformation 
-# 0.5 indicates OTU was present at Time 2, absent at Time 1
-# -0.5 indicates OTU was present at Time 1, absent at Time 2 
-# Row names are now subject IDs 
-res$dat.binary[1:3,1:3]
-
-# Quantitative transformation (see details in later sections)
-round(res$dat.quant.prop[1:3,1:3], 2)
-round(res$dat.quant.clr[1:3,1:3], 2)
-# Average proportion per OTU per subject 
-round(res$avg.prop[1:3,1:3], 2)
-# This was a paired transformation 
-res$type
-
-# LUniFrac
-D.unifrac <- LUniFrac(otu.tab = paired.otus, metadata = paired.meta, tree = tGTR$tree,
-                           gam = c(0, 0.5, 1), paired = TRUE, check.input = TRUE)
-# head(D.unifrac[, , "d_1"]) # gamma = 1 (quantitative paired transformation)
-# head(D.unifrac[, , "d_UW"])  # unweighted LUniFrac (qualitative/binary paired transf.)]
-
-#### attention !! #### cannot test MiRKAT with W as trait/exposure because W used for the pairs 
-## dimension of D.unifrac is n_pair x n_pair
-
-# try to check if influence on diabetes
-K.unweighted <- D2K(D.unifrac[, , "d_UW"])
-
-id_pair_var <- data.frame(pair_nb = rownames(D.unifrac[, , "d_UW"]))
-head(id_pair_var)
-
-colnames(sample_data(ps_prune))[grep("glu",colnames(sample_data(ps)))]
-table(sample_data(ps_prune)$u3tdiabet)
-
-dat_dia_pair <- data.frame(sample_data(ps_prune)[sample_data(ps_prune)$W == 1,c("pair_nb","u3tdiabet","u3csex")])
-
-id_pair_var <- merge(id_pair_var, dat_dia_pair, sort = FALSE,
-                     by.x = "pair_nb", by.y = "pair_nb",all.x = TRUE)
-
-head(id_pair_var)
-dim(K.unweighted)
-# testing using a single Kernel
-MiRKAT(y = id_pair_var$u3tdiabet, X = NULL, Ks = K.unweighted, out_type = "D", 
-       method = "davies", returnKRV = TRUE, returnR2 = TRUE)
-
-#### maybe interesting for microbiome -> AP -> diabetes ####
-
 #####################################
 ##### Global hypothesis testing #####
 #####################################
@@ -118,8 +57,8 @@ outcome <- as.numeric(sample_data(ps_prune)$W == 1)
 head(outcome)
 
 ## testing using a single Kernel
-MiRKAT(y = outcome, X = NULL, Ks = K.unweighted_uni, out_type = "D", 
-       method = "davies", returnKRV = TRUE, returnR2 = TRUE)
+ MiRKAT(y = outcome, X = NULL, Ks = K.unweighted_uni, out_type = "D", 
+                     method = "davies", returnKRV = TRUE, returnR2 = TRUE)
 
 ## omnibus test if multiple distance matrices ("Optimal MiRKAT")
 
@@ -135,15 +74,15 @@ euclidean_dist <- distance(ps_clr, method="euclidean")
 K.euclidean_dist <- D2K(as.matrix(euclidean_dist))
 
 # Bray
-bray_dist <- distance(ps_clr, method="bray") 
+bray_dist <- distance(ps_prune, method="bray") 
 K.bray_dist <- D2K(as.matrix(bray_dist))
 
 # Jaccard 
-jaccard_dist <- distance(ps_clr, method="jaccard") 
+jaccard_dist <- distance(ps_prune, method="jaccard") 
 K.jaccard_dist <- D2K(as.matrix(jaccard_dist))
 
 # Kulczynski
-kulczynski_dist <- distance(ps_clr, method="kulczynski") 
+kulczynski_dist <- distance(ps_prune, method="kulczynski") 
 K.kulczynski_dist <- D2K(as.matrix(kulczynski_dist))
 
 # Gower
@@ -154,22 +93,60 @@ K.gower_dist <- D2K(as.matrix(gower_dist))
 Ks = list(u_unifrac = K.unweighted_uni, euclidean_dist = K.euclidean_dist, 
           bray_dist = K.bray_dist, jaccard_dist = K.jaccard_dist, 
           kulczynski_dist = K.kulczynski_dist, gower_dist = K.gower_dist)
-MiRKAT(y = outcome, Ks = Ks, X = NULL, out_type = "D", 
+MiRKAT_obs <- MiRKAT(y = outcome, Ks = Ks, X = NULL, out_type = "D", 
        method = "davies", returnKRV = TRUE, returnR2 = TRUE)
+
+### PERFORM A RANDOMIZATION TEST ###
+dim(W_paired)
+
+# set the number of randomizations
+nrep <- ncol(W_paired)/1000
+
+# create a matrix where the t_rand will be saved
+t_arrays <- matrix(NA, ncol=length(Ks), nrow=nrep)
+
+for(j in 1:nrep){
+  print(j)
+  MiRKAT_rep <- MiRKAT(y = W_paired[,j], Ks = Ks, X = NULL, out_type = "D", 
+           method = "davies", returnKRV = TRUE, returnR2 = TRUE)
+    
+  # fill t_arrays 
+  t_arrays[j,] = MiRKAT_rep$KRV ## not sure this is the right test statistic
+}
+
+## calculate p_values
+p_values <- NULL
+for (p in 1:length(Ks)){
+  p_values[p] <- mean(t_arrays[,p] >= MiRKAT_obs$KRV[p], na.rm = TRUE)
+}
+p_values
+
+MiRKAT_obs$p_values
+
+## melt t_arrays
+t_arrays_data_frame <- data.frame(t_arrays)
+colnames(t_arrays_data_frame) <- names(Ks)
+
+t_array_melt <- melt(t_arrays_data_frame)
+
+g_rand <- ggplot(t_array_melt,aes(x = value)) + 
+  facet_wrap(~variable) + 
+  geom_histogram(binwidth = 0.8) + 
+  theme(axis.text.x = element_text(angle = -90, vjust = 0.5, hjust = -1)) 
 
 
 ###########################################
 ##### Low-dimensional representation ######
 ###########################################
 # dist_methods = c("unifrac","euclidean","bray","jaccard","kulczynski","gower")
-dist_methods = c("unifrac","euclidean","jaccard","gower") # without bray
+dist_methods = c("unifrac","euclidean","jaccard","gower") # without bray and kulczynski
 
 plist <- vector("list", length(dist_methods))
 names(plist) = dist_methods
 for(i in dist_methods){
   
   # Calculate distance matrix
-  if(i == "unifrac"){
+  if(i == c("unifrac","bray","jaccard","kulczynski")){
     iDist <- distance(ps_prune, method=i)
     }else{
     iDist <- distance(ps_clr, method=i)
@@ -204,3 +181,69 @@ ggsave(file = 'plots_pipeline_microbiome/iMDS_plots.jpeg',
        width = 180,
        height = 150,
        units = "mm")
+
+
+# ###################################################################################################
+# #### maybe interesting for microbiome -> AP -> diabetes ####
+# library(pldist)
+# 
+# ###########################################
+# ##### Calculate distances with pldist #####
+# ###########################################
+# 
+# # Input: Notice that row names are sample IDs 
+# paired.otus <- as(otu_table(ps_prune), "matrix") 
+# paired.otus[1:4,1:4]
+# 
+# paired.meta <- sample_data(ps_prune)[,c("pair_nb","ff4_prid","W")]
+# colnames(paired.meta) <- c("subjID", "sampID", "time")
+# paired.meta[1:4,]
+# 
+# # Transformation function 
+# otu.data <- data_prep(paired.otus, paired.meta, paired = TRUE, pseudoct = NULL)
+# otu.data$otu.props[1:3,1:3]  # OTU proportions 
+# otu.data$otu.clr[1:3,1:3]    # CLR-transformed proportions
+# res <- pltransform(otu.data, paired = TRUE, norm = TRUE)
+# 
+# # Binary transformation 
+# # 0.5 indicates OTU was present at Time 2, absent at Time 1
+# # -0.5 indicates OTU was present at Time 1, absent at Time 2 
+# # Row names are now subject IDs 
+# res$dat.binary[1:3,1:3]
+# 
+# # Quantitative transformation (see details in later sections)
+# round(res$dat.quant.prop[1:3,1:3], 2)
+# round(res$dat.quant.clr[1:3,1:3], 2)
+# # Average proportion per OTU per subject 
+# round(res$avg.prop[1:3,1:3], 2)
+# # This was a paired transformation 
+# res$type
+# 
+# # LUniFrac
+# D.unifrac <- LUniFrac(otu.tab = paired.otus, metadata = paired.meta, tree = tGTR$tree,
+#                       gam = c(0, 0.5, 1), paired = TRUE, check.input = TRUE)
+# # head(D.unifrac[, , "d_1"]) # gamma = 1 (quantitative paired transformation)
+# # head(D.unifrac[, , "d_UW"])  # unweighted LUniFrac (qualitative/binary paired transf.)]
+# 
+# #### attention !! #### cannot test MiRKAT with W as trait/exposure because W used for the pairs 
+# ## dimension of D.unifrac is n_pair x n_pair
+# 
+# # try to check if influence on diabetes
+# K.unweighted <- D2K(D.unifrac[, , "d_UW"])
+# 
+# id_pair_var <- data.frame(pair_nb = rownames(D.unifrac[, , "d_UW"]))
+# head(id_pair_var)
+# 
+# colnames(sample_data(ps_prune))[grep("glu",colnames(sample_data(ps)))]
+# table(sample_data(ps_prune)$u3tdiabet)
+# 
+# dat_dia_pair <- data.frame(sample_data(ps_prune)[sample_data(ps_prune)$W == 1,c("pair_nb","u3tdiabet","u3csex")])
+# 
+# id_pair_var <- merge(id_pair_var, dat_dia_pair, sort = FALSE,
+#                      by.x = "pair_nb", by.y = "pair_nb",all.x = TRUE)
+# 
+# head(id_pair_var)
+# dim(K.unweighted)
+# # testing using a single Kernel
+# MiRKAT(y = id_pair_var$u3tdiabet, X = NULL, Ks = K.unweighted, out_type = "D", 
+#        method = "davies", returnKRV = TRUE, returnR2 = TRUE)
