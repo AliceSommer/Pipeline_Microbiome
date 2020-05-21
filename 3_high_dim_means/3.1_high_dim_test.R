@@ -138,4 +138,3 @@ for (i in 1:nrep){
 hist(Tarray, main = NULL, xlab = NULL, breaks = 100)
 abline(v=clr_x_stat, lty = 2, lwd = 2)
 pval = mean(Tarray >= clr_x_stat); pval
-
