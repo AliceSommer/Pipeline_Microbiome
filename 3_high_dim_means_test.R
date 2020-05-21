@@ -11,13 +11,23 @@ ASV_table <- readRDS('dada2output/seqtab2020.rds')
 taxon_assign <- readRDS('dada2output/taxa2020.rds')
 
 # load sample/matched_data
-load('dat_matched_PM25.RData')
+load('dat_matched_PM25_bis.RData')
 
+# # load original dataset (try other Ws)
+# df <- read.csv('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/KORA\ DATA/Microbiome_data/KORA_microbiome_variables.csv')
+
+# load W matrix for randomization test
+load("W_paired_PM25.Rdata")
+
+# matched AP data
 sample_df <- matched_df[order(matched_df$ff4_prid),]
 sample_df$W <- as.factor(sample_df$W)
+# # "other" data
+# sample_df <- df[order(df$ff4_prid),]
+# sample_df$W <- as.factor(as.numeric(sample_df$u3tcigsmk == 1))
+
 samples.out <- as.character(sample_df$ff4_prid)
 rownames(sample_df) <- samples.out
-
 ################################################################################
 
 # create a phyloseq object
@@ -32,8 +42,8 @@ length(which(empty_species == 0))
 
 ps_prune <- prune_taxa(empty_species != 0, ps)
 
-ps = ps_prune
-# ps = tax_glom(ps_prune, "Genus", NArm = FALSE)
+# ps = ps_prune
+ps = tax_glom(ps_prune, "Family", NArm = FALSE)
 
 # Filter the data
 n<-dim(otu_table(ps))[1]
@@ -97,18 +107,16 @@ p_clrx <- 1-exp(-1/sqrt(pi)*exp(-(clr_x_stat-(2*log(p)-log(log(p))))/2))
 #### FISHER
 ####
 
-W_suffle <- sample(sample_data(ps)$W)
-
-head(W_suffle)
-head(as.numeric(!W_suffle))
-
 matrix_otu_bind <- rbind(clog_TX, clog_TY)
 dim(matrix_otu_bind)
 
+# set the number of randomizations
+nrep <- ncol(W_paired)/1000
+
 Tarray = NULL
 
-for (i in 1:600){
-  W_suffle <- sample(sample_data(ps)$W)
+for (i in 1:nrep){
+  W_suffle <- W_paired[,i]
   
   clog_TX_rand <- matrix_otu_bind[W_suffle == 0,]
   clog_TY_rand <- matrix_otu_bind[W_suffle == 1,]
@@ -129,5 +137,5 @@ for (i in 1:600){
 
 hist(Tarray, main = NULL, xlab = NULL, breaks = 100)
 abline(v=clr_x_stat, lty = 2, lwd = 2)
-pval = sum(Tarray >= clr_x_stat)/600; pval
+pval = mean(Tarray >= clr_x_stat); pval
 
