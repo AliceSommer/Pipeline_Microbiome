@@ -10,18 +10,18 @@ library(igraph)
 # set working directory
 setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE')
 
-# load data formated in NOV18 
-load('/data_pipeline_microbiome/dat_transformed_NOV18.RData')
+# load data formated in MAY20 (from the NOV18 file + diversity measures) 
+load('data_pipeline_microbiome/dat_diversity_MAY20.RData')
 
 # download long-term exposure data 
-dat_pollution = read.sas7bdat('/data_pipeline_microbiome/pv_14117g_sommer_gc_20180806.sas7bdat')
+dat_pollution = read.sas7bdat('data_pipeline_microbiome/pv_14117g_sommer_gc_20180806.sas7bdat')
 head(dat_pollution)
 
 # processing
-sum(dat_transformed$ff4_prid %in% dat_pollution$ff4_labid)
+sum(sample_df$ff4_prid %in% dat_pollution$ff4_labid)
 
 # merge 
-data_pollution = merge(dat_transformed, dat_pollution, 
+data_pollution = merge(sample_df, dat_pollution, 
                        by.x = 'ff4_prid', by.y = 'ff4_labid', all.y = TRUE)
 
 hist(data_pollution$GC_PM25_14, main = "", xlab = "Long-term PM2.5", breaks = 40)
@@ -532,7 +532,7 @@ ggplot(dat_melt_bin3_after, aes(x = factor(W), fill = factor(value))) +
 ################
 # SAVE DATASET #
 ################
-# save(matched_df, file = 'data_pipeline_microbiome/dat_matched_PM25_bis.RData')
+# save(matched_df, file = 'dat_matched_PM25_bis.RData')
 
 #######################
 #### RANDOMIZATION ####
