@@ -532,7 +532,7 @@ ggplot(dat_melt_bin3_after, aes(x = factor(W), fill = factor(value))) +
 ################
 # SAVE DATASET #
 ################
-# save(matched_df, file = 'dat_matched_PM25_bis.RData')
+save(matched_df, file = 'data_pipeline_microbiome/dat_matched_PM25_bis.RData')
 
 #######################
 #### RANDOMIZATION ####
