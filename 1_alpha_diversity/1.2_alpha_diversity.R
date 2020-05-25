@@ -1,6 +1,9 @@
 library(phyloseq); packageVersion("phyloseq")
 library(ggplot2); packageVersion("ggplot2")
 library(DivNet)
+library(doParallel)
+library(doSNOW)
+library(gridExtra)
 
 ###############################################################################
 
@@ -14,7 +17,10 @@ taxon_assign <- readRDS('dada2output/taxa2020.rds')
 load("dada2output/phylotree2020.phy")
 
 # load sample/matched_data
-load('dat_matched_PM25.RData')
+load('dat_matched_PM25_bis.RData')
+
+# load W matrix for randomization test
+load("W_paired_PM25.Rdata")
 
 sample_df <- matched_df[order(matched_df$ff4_prid),]
 sample_df$W <- as.factor(sample_df$W)
@@ -36,14 +42,73 @@ length(which(empty_species == 0))
 
 ps_prune <- prune_taxa(empty_species != 0, ps)
 
+### 1. ESTIMATE THE TOTAL ALPHA DIVERSITY FOR EACH SAMPLE ###
+
 # agglomerate data to family level
 ps_fam <- tax_glom(ps_prune, taxrank="Family")
 
 divnet_phylum <- divnet(ps_fam,
-                         X = "W",
                          ncores = 4)
 divnet_phylum
 
-testDiversity(divnet_phylum, "shannon")
+sample_data(ps_prune)[,"DivNet_W"] <- summary(divnet_phylum$shannon)$estimate
+sample_data(ps_prune)[,"DN_error_W"] <- summary(divnet_phylum$shannon)$error
 
-plot(divnet_phylum)
+###############
+## BREAKAWAY ##
+###############
+
+g_PM <- ggplot(sample_data(ps_prune), aes(color = factor(W), y = DivNet_W)) +
+  geom_boxplot(alpha = .5) + ylab('DivNet shannon index') +
+  scale_x_discrete(name = "") +
+  scale_colour_manual(values = c("gray","blue4"), limits=c("1","0"), name ="Long-term PM2.5", labels = c("Low","High")) +
+  theme(legend.position = "top", legend.key.size =  unit(0.1, "in")) +
+  guides(color=guide_legend(nrow=2,byrow=TRUE))
+
+g_PM_sex <- ggplot(sample_data(ps_prune), aes(x = factor(u3csex), y = DivNet_W, color = factor(W))) +
+  geom_boxplot(alpha = .5) + ylab('DivNet shannon index') +
+  scale_x_discrete(name = "Sex", limits=c("0","1"), labels = c("Female", "Male")) +
+  scale_colour_manual(values = c("gray","blue4"), limits=c("1","0"), name ="Long-term PM2.5", labels = c("Low","High")) +
+  theme(legend.position = "top", legend.key.size =  unit(0.1, "in")) +
+  guides(color=guide_legend(nrow=2,byrow=TRUE))
+
+g_arrange <- grid.arrange(g_PM,g_PM_sex, nrow = 1)
+
+### 2. USE BETTA FUNCTION ###
+x <- cbind(1, sample_data(ps_prune)$W, sample_data(ps_prune)$u3csex, sample_data(ps_prune)$u3tcigsmk1)
+
+reg <- betta(summary(divnet_phylum$shannon)$estimate,
+             summary(divnet_phylum$shannon)$error, X = x)
+reg$table
+estim_obs <- reg$table[2,1]
+
+### 3. PERFORM A RANDOMIZATION TEST ###
+dim(W_paired)
+
+# set the number of randomizations
+nrep <- ncol(W_paired)/100
+
+# create a matrix where the t_rand will be saved
+t_array <- NULL
+
+for(i in 1:nrep){
+  print(i)
+  x = cbind(1, W_paired[,i], 
+            sample_data(ps_prune)$u3csex, 
+            sample_data(ps_prune)$u3tcigsmk1)
+  
+  reg = betta(summary(divnet_phylum$shannon)$estimate,
+              summary(divnet_phylum$shannon)$error, X = x)
+  
+  # fill t_array
+  t_array[i] = reg$table[2,1] 
+}
+
+## calculate p_value
+p_value <- mean(t_array >= estim_obs)
+p_value
+hist(t_array, breaks = 30)
+ 
+
+
+

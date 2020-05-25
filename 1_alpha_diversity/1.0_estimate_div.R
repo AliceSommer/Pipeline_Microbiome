@@ -28,6 +28,12 @@ ps <- phyloseq(otu_table(ASV_table, taxa_are_rows=FALSE),
                tax_table(taxon_assign))
 ps
 
+## plug-in richness estimate
+rich <- sample_richness(ps)
+
+## agglomerate data to family level
+ps_spe <- tax_glom(ps, taxrank="Genus")
+
 ###############
 ## BREAKAWAY ##
 ###############
@@ -37,6 +43,9 @@ ba <- breakaway(ps)
 ## add the estimate and error in the dataset
 sample_df[,"breakaway"] <- summary(ba)$estimate
 sample_df[,"ba_error"] <- summary(ba)$error
+
+summary(ba)[summary(ba)$estimate > 300,]
+##>>>>>>>>> 3 outliers to report 
 
 ############
 ## DivNet ##

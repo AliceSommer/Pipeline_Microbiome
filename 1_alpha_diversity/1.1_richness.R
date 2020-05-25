@@ -46,23 +46,28 @@ length(which(empty_species == 0))
 
 ps_prune <- prune_taxa(empty_species != 0, ps)
 
-### 1. ESTIMATE THE TOTAL DIVERSITY FOR EACH SAMPLE ###
+### 1. ESTIMATE THE TOTAL RICHNESS FOR EACH SAMPLE ###
 rich <- sample_richness(ps_prune)
 ba <- breakaway(ps_prune)
 # ba <- breakaway_nof1(ps_prune)
 ba[[1]]
 # plot(ba, ps_prune, color = "W") 
 
-sample_data(ps_prune)[,"breakaway"] <- summary(ba)$estimate
+sample_data(ps_prune)[,"breakaway_W"] <- summary(ba)$estimate
+sample_data(ps_prune)[,"ba_error_W"] <- summary(ba)$error
 
-g_PM <- ggplot(sample_data(ps_prune), aes(color = factor(W), y = breakaway)) +
+###############
+## BREAKAWAY ##
+###############
+
+g_PM <- ggplot(sample_data(ps_prune), aes(color = factor(W), y = breakaway_W)) +
   geom_boxplot(alpha = .5) + ylab('breakaway richness measure') +
   scale_x_discrete(name = "") +
   scale_colour_manual(values = c("gray","blue4"), limits=c("1","0"), name ="Long-term PM2.5", labels = c("Low","High")) +
   theme(legend.position = "top", legend.key.size =  unit(0.1, "in")) +
   guides(color=guide_legend(nrow=2,byrow=TRUE))
 
-g_PM_sex <- ggplot(sample_data(ps_prune), aes(x = factor(u3csex), y = breakaway, color = factor(W))) +
+g_PM_sex <- ggplot(sample_data(ps_prune), aes(x = factor(u3csex), y = breakaway_W, color = factor(W))) +
   geom_boxplot(alpha = .5) + ylab('breakaway richness measure') +
   scale_x_discrete(name = "Sex", limits=c("0","1"), labels = c("Female", "Male")) +
   scale_colour_manual(values = c("gray","blue4"), limits=c("1","0"), name ="Long-term PM2.5", labels = c("Low","High")) +
@@ -71,14 +76,14 @@ g_PM_sex <- ggplot(sample_data(ps_prune), aes(x = factor(u3csex), y = breakaway,
 
 g_arrange <- grid.arrange(g_PM,g_PM_sex, nrow = 1)
 
+### 2. USE BETTA FUNCTION ###
 x <- cbind(1, sample_data(ps_prune)$W, sample_data(ps_prune)$u3csex, sample_data(ps_prune)$u3tcigsmk1)
 
-head(summary(ba)$estimate)
-head(summary(ba)$error)
-  
-### 2. USE BETTA FUNCTION ###
-reg <- betta(summary(rich)$estimate,
-             summary(ba)$error, X = x)
+head(sample_data(ps_prune)$breakaway_W)
+head(sample_data(ps_prune)$ba_error_W)
+
+reg <- betta(sample_data(ps_prune)$breakaway_W,
+             sample_data(ps_prune)$ba_error_W, X = x)
 reg$table
 estim_obs <- reg$table[2,1]
 
@@ -97,8 +102,8 @@ for(i in 1:nrep){
              sample_data(ps_prune)$u3csex, 
              sample_data(ps_prune)$u3tcigsmk1)
   
-  reg = betta(summary(rich)$estimate,
-               summary(ba)$error, X = x)
+  reg = betta(sample_data(ps_prune)$breakaway_W,
+              sample_data(ps_prune)$ba_error_W, X = x)
   
   # fill t_array
   t_array[i] = reg$table[2,1] 
@@ -107,12 +112,12 @@ for(i in 1:nrep){
 ## calculate p_value
 p_value <- mean(t_array >= estim_obs)
 p_value
-hist(t_array, breaks = 30)
+hist(t_array, breaks = 40)
 
 ##############################
 ### betta (tweeked solver) ###
 ##############################
-data_check <- data.frame(summary(ba)$estimate, summary(ba)$error, W = sample_data(ps)$W)
+data_check <- data.frame(sample_data(ps)$breakaway, sample_data(ps)$ba_error, W = sample_data(ps)$W)
 head(data_check)
 
 sum(duplicated(data_check))
@@ -205,28 +210,28 @@ initial_est = NULL
 
 mytable
 
-sample_data(ps_prune)$ba_estimate <- summary(ba)$estimate
+
 sample_data(ps_prune)$alpha_ci_low <- summary(ba)$lower
 sample_data(ps_prune)$alpha_ci_high <- summary(ba)$upper
 
 dat_plot = sample_data(ps_prune)
 
 # order plot
-dat_plot$pair_nb <- factor(dat_plot$pair_nb, levels = dat_plot$pair_nb[dat_plot$W == 1][order(dat_plot$ba_estimate[dat_plot$W == 1])])
+dat_plot$pair_nb <- factor(dat_plot$pair_nb, levels = dat_plot$pair_nb[dat_plot$W == 1][order(dat_plot$breakaway_W[dat_plot$W == 1])])
 dat_plot$pair_nb  # notice the changed order of factor levels
 
 ggplot(dat_plot, 
-       aes(color = factor(W), y = ba_estimate, x = pair_nb)) +
+       aes(color = factor(W), y = breakaway_W, x = pair_nb)) +
   geom_point() + 
   geom_errorbar(aes(ymin=alpha_ci_low, ymax=alpha_ci_high), width=.1) +
   ylab('Breakaway richness estimate') +
   scale_x_discrete(name = "") +
   scale_colour_manual(values = c("gray","blue4"), limits=c("1","0"), 
                       name ="Long-term PM2.5", 
-                      labels = c("Low (<= 11)","High (>= 12)")) +
+                      labels = c("Low","High")) +
   theme(axis.text.x=element_text(angle =- 70, vjust = 0.5)) + ylim(c(30,300))
 
-g_ba <- ggplot(dat_plot, aes(color = factor(W), y = ba_estimate)) +
+g_ba <- ggplot(dat_plot, aes(color = factor(W), y = breakaway_W)) +
   geom_boxplot(alpha = .5) + ylab('Breakaway richness estimate') +
   scale_x_discrete(name = "") +
   scale_colour_manual(values = c("gray","blue4"), limits=c("1","0"), 
