@@ -81,47 +81,86 @@ K.bray_dist <- D2K(as.matrix(bray_dist))
 jaccard_dist <- distance(ps_prune, method="jaccard") 
 K.jaccard_dist <- D2K(as.matrix(jaccard_dist))
 
-# Kulczynski
-kulczynski_dist <- distance(ps_prune, method="kulczynski") 
-K.kulczynski_dist <- D2K(as.matrix(kulczynski_dist))
-
 # Gower
 gower_dist <- distance(ps_clr, method="gower")
 K.gower_dist <- D2K(as.matrix(gower_dist))
 
 ## testing using a several Kernels
 Ks = list(u_unifrac = K.unweighted_uni, euclidean_dist = K.euclidean_dist, 
-          bray_dist = K.bray_dist, jaccard_dist = K.jaccard_dist, 
-          kulczynski_dist = K.kulczynski_dist, gower_dist = K.gower_dist)
+          bray_dist = K.bray_dist, jaccard_dist = K.jaccard_dist, gower_dist = K.gower_dist)
 MiRKAT_obs <- MiRKAT(y = outcome, Ks = Ks, X = NULL, out_type = "D", 
-       method = "davies", returnKRV = TRUE, returnR2 = TRUE)
+       method = "permutation", returnKRV = TRUE, returnR2 = TRUE)
 
+#####################################
 ### PERFORM A RANDOMIZATION TEST ###
+####################################
+
+#### ADAPT MiRKAT to get Q-stat ####
+y = outcome; Ks = Ks; X = NULL; family = "binomial"
+
+n <- length(y)
+if (is.null(X)) {
+  X1 <-  matrix(rep(1, length(y)), ncol=1)
+} else {
+  X1 <- model.matrix(~. , as.data.frame(X))
+}
+
+qX1 <- qr(X1)
+## Take care of aliased variables and pivoting in rhs
+X1 <- X1[, qX1$pivot, drop=FALSE]
+X1 <- X1[, 1:qX1$rank, drop=FALSE]
+options(warn=2)  # make sure this model is correct
+mod <- glm(y ~ X1-1, family = family)
+options(warn=1)
+
+px  = NCOL(X1)
+mu  = mod$fitted.values
+res = y - mu  
+
+# Continuous or binary outcome Q statistic 
+getQ = function(K, res, s2){    
+  Q = c(1 / s2 * res %*% K %*% res)
+}
+
+Qs_obs = lapply(Ks, getQ, res, s2 = 1)
+
+
+#### TEST ####
 dim(W_paired)
 
 # set the number of randomizations
-nrep <- ncol(W_paired)/1000
+nrep <- ncol(W_paired)/100
 
 # create a matrix where the t_rand will be saved
 t_arrays <- matrix(NA, ncol=length(Ks), nrow=nrep)
 
 for(j in 1:nrep){
   print(j)
-  MiRKAT_rep <- MiRKAT(y = W_paired[,j], Ks = Ks, X = NULL, out_type = "D", 
-           method = "davies", returnKRV = TRUE, returnR2 = TRUE)
-    
+  
+  y_new = W_paired[,j]
+  
+  mod <- glm(y_new ~ X1-1, family = family)
+  
+  mu  = mod$fitted.values
+  res = y_new - mu  
+  
+  Qs_new = lapply(Ks, getQ, res, s2 = 1)
+  
   # fill t_arrays 
-  t_arrays[j,] = MiRKAT_rep$KRV ## not sure this is the right test statistic
+  t_arrays[j,] = unlist(Qs_new) ## not sure this is the statistic we want (KRV?)
 }
 
 ## calculate p_values
 p_values <- NULL
 for (p in 1:length(Ks)){
-  p_values[p] <- mean(t_arrays[,p] >= MiRKAT_obs$KRV[p], na.rm = TRUE)
+  p_values[p] <- mean(t_arrays[,p] >= Qs_obs[p])
 }
 p_values
 
 MiRKAT_obs$p_values
+
+## calculate omnibus p-value ?????
+
 
 ## melt t_arrays
 t_arrays_data_frame <- data.frame(t_arrays)
@@ -138,20 +177,22 @@ g_rand <- ggplot(t_array_melt,aes(x = value)) +
 ###########################################
 ##### Low-dimensional representation ######
 ###########################################
-# dist_methods = c("unifrac","euclidean","bray","jaccard","kulczynski","gower")
-dist_methods = c("unifrac","euclidean","jaccard","gower") # without bray and kulczynski
+# dist_methods = c("unifrac","euclidean","bray","jaccard",gower")
+dist_methods = c("unifrac","euclidean","jaccard","gower") # without bray
 
 plist <- vector("list", length(dist_methods))
 names(plist) = dist_methods
 for(i in dist_methods){
-  
+  print(i)
   # Calculate distance matrix
-  if(i == c("unifrac","bray","jaccard","kulczynski")){
+  if(i %in% c("unifrac","bray","jaccard")){
     iDist <- distance(ps_prune, method=i)
+    iMDS  <- ordinate(ps_prune, "MDS", distance=iDist)
     }else{
     iDist <- distance(ps_clr, method=i)
+    iMDS  <- ordinate(ps_clr, "MDS", distance=iDist)
     }
-  print(i)
+  
   # Calculate ordination
   iMDS  <- ordinate(ps_clr, "MDS", distance=iDist)
   ## Make plot
@@ -172,15 +213,15 @@ names(df)[1] <- "distance"
 p = ggplot(df, aes(Axis.1, Axis.2, color=W))
 p = p + geom_point(size=1, alpha=0.5)
 p = p + facet_wrap(~distance, scales="free")
-p = p + ggtitle("MDS on various distance metrics (bray and kulczynski missing)")
+p = p + ggtitle("MDS on various distance metrics")
 p
 
-ggsave(file = 'plots_pipeline_microbiome/iMDS_plots.jpeg',
-       p,
-       dpi=300,
-       width = 180,
-       height = 150,
-       units = "mm")
+# ggsave(file = 'plots_pipeline_microbiome/iMDS_plots.jpeg',
+#        p,
+#        dpi=300,
+#        width = 180,
+#        height = 150,
+#        units = "mm")
 
 
 # ###################################################################################################
