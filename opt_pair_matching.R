@@ -10,8 +10,8 @@ library(igraph)
 # set working directory
 setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE')
 
-# load data formated in MAY20 (from the NOV18 file + diversity measures) 
-load('data_pipeline_microbiome/dat_diversity_MAY20.RData')
+# load data formated 
+load('data_pipeline_microbiome/dat_transformed_NOV18.RData')
 
 # download long-term exposure data 
 dat_pollution = read.sas7bdat('data_pipeline_microbiome/pv_14117g_sommer_gc_20180806.sas7bdat')

@@ -43,7 +43,7 @@ length(which(empty_species == 0))
 ps_prune <- prune_taxa(empty_species != 0, ps)
 
 # ps = ps_prune
-ps = tax_glom(ps_prune, "Family", NArm = FALSE)
+ps = tax_glom(ps_prune, "Genus", NArm = FALSE)
 
 # Add 0.5 on zeros
 otu_table(ps)[otu_table(ps)==0] <- 0.5
@@ -90,6 +90,7 @@ pLogX_t_c <- 1-exp(-1/sqrt(pi)*exp(-(StatLogX_t_c-(2*log(p)-log(log(p))))/2))
 
 pclrX_t_c <- 1-exp(-1/sqrt(pi)*exp(-(StatclrX_t_c-(2*log(p)-log(log(p))))/2))
 
+StatclrX_t_c; pclrX_t_c
 
 ####
 #### FISHER
