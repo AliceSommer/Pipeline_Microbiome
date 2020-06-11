@@ -18,10 +18,10 @@ dat_pollution = read.sas7bdat('data_pipeline_microbiome/pv_14117g_sommer_gc_2018
 head(dat_pollution)
 
 # processing
-sum(sample_df$ff4_prid %in% dat_pollution$ff4_labid)
+sum(dat_transformed$ff4_prid %in% dat_pollution$ff4_labid)
 
 # merge 
-data_pollution = merge(sample_df, dat_pollution, 
+data_pollution = merge(dat_transformed, dat_pollution, 
                        by.x = 'ff4_prid', by.y = 'ff4_labid', all.y = TRUE)
 
 hist(data_pollution$GC_PM25_14, main = "", xlab = "Long-term PM2.5", breaks = 40)
