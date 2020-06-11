@@ -61,7 +61,7 @@ ps_Genus
 ps_Family <- tax_glom(ps_prune, taxrank = "Family", NArm = FALSE)
 ps_Family 
 
-ps_work = ps_Family
+ps_work = ps_Genus
 
 ################################################################################
 
@@ -99,9 +99,9 @@ ratio_matrix = matrix(NA, nrow = n, ncol = 1)
 
 verbose = T
 
-TEST = DACOMP.TEST.NAME.WILCOXON
+# TEST = DACOMP.TEST.NAME.WILCOXON
 # TEST = DACOMP.TEST.NAME.DIFFERENCE_IN_MEANS
-# TEST = DACOMP.TEST.NAME.LOG_FOLD_DIFFERENCE_IN_MEANS
+TEST = DACOMP.TEST.NAME.LOG_FOLD_DIFFERENCE_IN_MEANS
 # TEST = DACOMP.TEST.NAME.WELCH
 # TEST = DACOMP.TEST.NAME.WELCH_LOGSCALE
 
