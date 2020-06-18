@@ -4,6 +4,7 @@ library(ggplot2); packageVersion("ggplot2")
 library(plyr); packageVersion("plyr")
 library(MiRKAT)
 library(compositions)
+library(reshape2)
 
 ###############################################################################
 
@@ -17,10 +18,10 @@ taxon_assign <- readRDS('data_pipeline_microbiome/dada2output/taxa2020.rds')
 load("data_pipeline_microbiome/dada2output/phylotree2020.phy")
 
 # load sample/matched_data
-load('data_pipeline_microbiome/dat_matched_PM25_bis.RData')
+load('data_pipeline_microbiome/dat_matched_smoke.RData')
 
 # load W matrix for randomization test
-load("data_pipeline_microbiome/W_paired_PM25.Rdata")
+load("data_pipeline_microbiome/W_paired_smoke.Rdata")
 
 ###############################################################################
 
@@ -36,11 +37,17 @@ ps <- phyloseq(otu_table(ASV_table, taxa_are_rows=FALSE),
                phy_tree(tGTR$tree))
 ps
 
-# locate the species that are totally absent in the matched data
-empty_species <- colSums(otu_table(ps))
-length(which(empty_species == 0))
+# locate the species that are totally absent in the matched data 
+# 1. have a vector of nr. of observed samples per taxa
+vec_taxa <- apply(otu_table(ps), 2, function(x) sum(x > 0, na.rm = TRUE))
+length(which(vec_taxa == 0))
+# 2. how many tax are obs. in at least x% of samples
+perc <- 0.05 # x%
+samp_perc <- trunc(dim(sample_df)[1]*perc)
+# samp_perc <- 0
+length(which(vec_taxa > samp_perc))
 
-ps_prune <- prune_taxa(empty_species != 0, ps)
+ps_prune <- prune_taxa(vec_taxa >= samp_perc, ps)
 
 #####################################
 ##### Global hypothesis testing #####
@@ -126,10 +133,10 @@ Qs_obs = lapply(Ks, getQ, res, s2 = 1)
 
 
 #### TEST ####
-dim(W_paired)
+dim(W_paired_smoke)
 
 # set the number of randomizations
-nrep <- ncol(W_paired)/100
+nrep <- ncol(W_paired_smoke)/100
 
 # create a matrix where the t_rand will be saved
 t_arrays <- matrix(NA, ncol=length(Ks), nrow=nrep)
@@ -137,7 +144,7 @@ t_arrays <- matrix(NA, ncol=length(Ks), nrow=nrep)
 for(j in 1:nrep){
   print(j)
   
-  y_new = W_paired[,j]
+  y_new = W_paired_smoke[,j]
   
   mod <- glm(y_new ~ X1-1, family = family)
   
@@ -159,19 +166,49 @@ p_values
 
 MiRKAT_obs$p_values
 
-## calculate omnibus p-value ?????
+# ## plot randomization distributions
+# t_arrays_data_frame <- data.frame(t_arrays)
+# colnames(t_arrays_data_frame) <- names(Ks)
+# 
+# t_array_melt <- melt(t_arrays_data_frame)
+# 
+# g_rand <- ggplot(t_array_melt,aes(x = value)) + 
+#   facet_wrap(~variable) + 
+#   geom_histogram(binwidth = 0.8) + 
+#   theme(axis.text.x = element_text(angle = -90, vjust = 0.5, hjust = -1)) 
 
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Multiple comparison adjustment 
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+verbose = T
+### Lee, Forastiere, Miratix, Pillai (2017) method  for multiple comparison adjustment ### 
 
-## melt t_arrays
-t_arrays_data_frame <- data.frame(t_arrays)
-colnames(t_arrays_data_frame) <- names(Ks)
+# STEP 1 to 3: recorded in "stats_matrix"
+dim(t_arrays)
+# the first row is the observed
 
-t_array_melt <- melt(t_arrays_data_frame)
+# AT STEP 4: consider at each rep. T_rep as T_obs to calculate nrep p-values 
+# for the hypothetical test statistics
 
-g_rand <- ggplot(t_array_melt,aes(x = value)) + 
-  facet_wrap(~variable) + 
-  geom_histogram(binwidth = 0.8) + 
-  theme(axis.text.x = element_text(angle = -90, vjust = 0.5, hjust = -1)) 
+hyp_matrix <- t_arrays 
+hyp_p_value <- matrix(NA, ncol = dim(t_arrays)[2], nrow = nrep)
+
+# based on value (hyp_obs) of each row
+for (r in 1:nrep){
+  if(verbose)
+    if(r%% ceiling(nrep/100) == 1)
+      cat(paste0('Testing rep : ',r,'/',nrep,' \n\r'))
+  # calc. hypothetical p_value on each column of the matrix 
+  hyp_p_value[r,] <- apply(t_arrays, 2, function(x) mean(x >= x[r]))
+}
+
+# for each rep. take the min. p_value
+min_p_nrep <- apply(hyp_p_value, 1, function(x) min(x, na.rm = TRUE))
+head(min_p_nrep)
+
+# calculate the proportion of min_p_nrep that is sm/eq. p_value (for obs.)
+p_value_adj <- sapply(p_values, function(x) mean(min_p_nrep <= x))
+head(p_value_adj)
 
 
 ###########################################
