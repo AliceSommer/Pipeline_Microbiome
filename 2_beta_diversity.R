@@ -18,10 +18,10 @@ taxon_assign <- readRDS('data_pipeline_microbiome/dada2output/taxa2020.rds')
 load("data_pipeline_microbiome/dada2output/phylotree2020.phy")
 
 # load sample/matched_data
-load('data_pipeline_microbiome/dat_matched_smoke.RData')
+load('data_pipeline_microbiome/dat_matched_PM25_bis.RData')
 
 # load W matrix for randomization test
-load("data_pipeline_microbiome/W_paired_smoke.Rdata")
+load("data_pipeline_microbiome/W_paired_PM25.Rdata")
 
 ###############################################################################
 
@@ -43,11 +43,11 @@ vec_taxa <- apply(otu_table(ps), 2, function(x) sum(x > 0, na.rm = TRUE))
 length(which(vec_taxa == 0))
 # 2. how many tax are obs. in at least x% of samples
 perc <- 0.05 # x%
-samp_perc <- trunc(dim(sample_df)[1]*perc)
-# samp_perc <- 0
+# samp_perc <- trunc(dim(sample_df)[1]*perc)
+samp_perc <- 0
 length(which(vec_taxa > samp_perc))
 
-ps_prune <- prune_taxa(vec_taxa >= samp_perc, ps)
+ps_prune <- prune_taxa(vec_taxa > samp_perc, ps)
 
 #####################################
 ##### Global hypothesis testing #####
@@ -85,7 +85,7 @@ bray_dist <- distance(ps_prune, method="bray")
 K.bray_dist <- D2K(as.matrix(bray_dist))
 
 # Jaccard 
-jaccard_dist <- distance(ps_prune, method="jaccard") 
+jaccard_dist <- distance(ps_prune, method="jaccard", binary = TRUE) 
 K.jaccard_dist <- D2K(as.matrix(jaccard_dist))
 
 # Gower
@@ -133,10 +133,10 @@ Qs_obs = lapply(Ks, getQ, res, s2 = 1)
 
 
 #### TEST ####
-dim(W_paired_smoke)
+dim(W_paired)
 
 # set the number of randomizations
-nrep <- ncol(W_paired_smoke)/100
+nrep <- ncol(W_paired)/100
 
 # create a matrix where the t_rand will be saved
 t_arrays <- matrix(NA, ncol=length(Ks), nrow=nrep)
@@ -144,7 +144,7 @@ t_arrays <- matrix(NA, ncol=length(Ks), nrow=nrep)
 for(j in 1:nrep){
   print(j)
   
-  y_new = W_paired_smoke[,j]
+  y_new = W_paired[,j]
   
   mod <- glm(y_new ~ X1-1, family = family)
   
@@ -166,16 +166,31 @@ p_values
 
 MiRKAT_obs$p_values
 
-# ## plot randomization distributions
-# t_arrays_data_frame <- data.frame(t_arrays)
-# colnames(t_arrays_data_frame) <- names(Ks)
-# 
-# t_array_melt <- melt(t_arrays_data_frame)
-# 
-# g_rand <- ggplot(t_array_melt,aes(x = value)) + 
-#   facet_wrap(~variable) + 
-#   geom_histogram(binwidth = 0.8) + 
-#   theme(axis.text.x = element_text(angle = -90, vjust = 0.5, hjust = -1)) 
+## plot randomization distributions
+t_arrays_data_frame <- data.frame(t_arrays)
+colnames(t_arrays_data_frame) <- c("Unifrac", "Aitchison", "Bray", "Jaccard", "Gower")
+
+t_array_melt <- melt(t_arrays_data_frame)
+t_array_melt_plot <- t_array_melt[t_array_melt$variable != "Bray",]
+
+dat_text_lab <- data.frame(variable = colnames(t_arrays_data_frame))
+dat_text_lab$obs_stat <- as.numeric(Qs_obs)
+dat_text_lab <- dat_text_lab[dat_text_lab$variable != "Bray",]
+
+g_rand <- ggplot(t_array_melt_plot,aes(x = value)) +
+  facet_wrap(~variable, scales = "free") +
+  geom_histogram(fill="white",colour="black") + 
+  geom_vline(data = dat_text_lab, mapping = aes(xintercept = obs_stat), 
+             linetype = "dashed", colour = "red", size = .3) +
+  theme(axis.text.x = element_text(angle = -90, vjust = 0.5),
+        panel.background = element_blank())
+
+# ggsave(file = 'plots_pipeline_microbiome/null_dist_beta.jpeg',
+#        g_rand,
+#        dpi=300,
+#        width = 180,
+#        height = 150,
+#        units = "mm")
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Multiple comparison adjustment 
@@ -210,6 +225,11 @@ head(min_p_nrep)
 p_value_adj <- sapply(p_values, function(x) mean(min_p_nrep <= x))
 head(p_value_adj)
 
+col_vline <- c("red", "blue", "darkgreen", "orange")
+  
+hist(min_p_nrep, main = "", xlab = "min. p-value for 10,000 rep.")
+abline(v = p_values[-3], col = col_vline, lty = 3, lwd = 2)
+legend("topright", colnames(t_arrays_data_frame)[-3], text.col = col_vline)
 
 ###########################################
 ##### Low-dimensional representation ######
@@ -223,20 +243,21 @@ for(i in dist_methods){
   print(i)
   # Calculate distance matrix
   if(i %in% c("unifrac","bray","jaccard")){
-    iDist <- distance(ps_prune, method=i)
-    iMDS  <- ordinate(ps_prune, "MDS", distance=iDist)
-    }else{
-    iDist <- distance(ps_clr, method=i)
-    iMDS  <- ordinate(ps_clr, "MDS", distance=iDist)
-    }
-  
-  # Calculate ordination
+  iDist <- distance(ps_prune, method=i)
+  iMDS  <- ordinate(ps_prune, "MDS", distance=iDist)
+  }else if(i %in% c("jaccard")){
+  iDist <- distance(ps_prune, method=i, binary = TRUE)
+  iMDS  <- ordinate(ps_prune, "MDS", distance=iDist)
+  }else{
+  iDist <- distance(ps_clr, method=i)
   iMDS  <- ordinate(ps_clr, "MDS", distance=iDist)
+  }
+  
   ## Make plot
   # Don't carry over previous plot (if error, p will be blank)
   p <- NULL
   # Create plot, store as temp variable, p
-  p <- plot_ordination(ps_prune, iMDS, color="W", shape="u3tdiabet")
+  p <- plot_ordination(ps_prune, iMDS, color="W")
   # Add title to each plot
   p <- p + ggtitle(paste("MDS using distance method ", i, sep=""))
   # Save the graphic to file.
