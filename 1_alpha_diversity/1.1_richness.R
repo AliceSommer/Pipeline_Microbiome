@@ -17,7 +17,7 @@ taxon_assign <- readRDS('dada2output/taxa2020.rds')
 load('dat_matched_PM25_bis.RData')
 
 # load W matrix for randomization test
-load("W_paired_PM25.Rdata")
+load("W_paired_PM25_bi.Rdata")
 
 # load original dataset (try other Ws)
 # df <- read.csv('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/KORA\ DATA/Microbiome_data/KORA_microbiome_variables.csv')
@@ -51,11 +51,35 @@ rich <- sample_richness(ps_prune)
 ba <- breakaway(ps_prune)
 # ba <- breakaway_nof1(ps_prune)
 ba[[1]]
-# plot(ba, ps_prune, color = "W") 
+# plot(ba, ps_prune, color = "W")
 
 sample_data(ps_prune)[,"breakaway_W"] <- summary(ba)$estimate
 sample_data(ps_prune)[,"ba_error_W"] <- summary(ba)$error
+sample_data(ps_prune)[,"lower"] <- summary(ba)$lower
+sample_data(ps_prune)[,"upper"] <- summary(ba)$upper
+# upper is NA when SE so small that confidence interval is the estimate...
 
+# add sequencing depth as variable
+sample_data(ps_prune)[,"sample_counts"] <- sample_sums(ps_prune)
+sample_data(ps_prune)[,"richness"] <- summary(rich)$estimate
+
+sample_data(ps_prune)[,"dim"] <- as.factor(1:dim(sample_df)[1])
+
+ggplot(sample_data(ps_prune), aes(x = dim)) + 
+  geom_point(aes(y = breakaway_W), colour = "red") + 
+  # geom_errorbar(aes(ymin=lower, ymax=upper)) +
+  geom_point(aes(y = richness), colour = "blue", alpha = .5) +
+  xlab('Samples') + ylab("BA estimate")
+
+hist(sample_data(ps_prune)$ba_error_W, breaks = 50)
+head(sample_data(ps_prune)[sample_data(ps_prune)$ba_error_W > 400,
+                           c("ba_error_W","sample_counts")])
+
+summary(sample_data(ps_prune)$sample_counts)
+
+# remove the outlier in seq. depth ?
+# ps_prune <- subset_samples(ps_prune, pair_nb != 46)
+  
 ###############
 ## BREAKAWAY ##
 ###############
@@ -77,8 +101,7 @@ g_PM_sex <- ggplot(sample_data(ps_prune), aes(x = factor(u3csex), y = breakaway_
 g_arrange <- grid.arrange(g_PM,g_PM_sex, nrow = 1)
 
 ### 2. USE BETTA FUNCTION ###
-x <- cbind(1, sample_data(ps_prune)$W, sample_data(ps_prune)$u3csex, sample_data(ps_prune)$u3tcigsmk1)
-
+x <- cbind(1, sample_data(ps_prune)$W, sample_data(ps_prune)$u3csex)
 head(sample_data(ps_prune)$breakaway_W)
 head(sample_data(ps_prune)$ba_error_W)
 
@@ -88,19 +111,18 @@ reg$table
 estim_obs <- reg$table[2,1]
 
 ### 3. PERFORM A RANDOMIZATION TEST ###
-dim(W_paired)
+dim(W_paired_smoke)
 
 # set the number of randomizations
-nrep <- ncol(W_paired)/100
+nrep <- ncol(W_paired_smoke)/100
 
 # create a matrix where the t_rand will be saved
 t_array <- NULL
 
 for(i in 1:nrep){
   print(i)
-  x = cbind(1, W_paired[,i], 
-             sample_data(ps_prune)$u3csex, 
-             sample_data(ps_prune)$u3tcigsmk1)
+  x = cbind(1, W_paired_smoke[,i], 
+             sample_data(ps_prune)$u3csex)
   
   reg = betta(sample_data(ps_prune)$breakaway_W,
               sample_data(ps_prune)$ba_error_W, X = x)
@@ -110,23 +132,14 @@ for(i in 1:nrep){
 }
 
 ## calculate p_value
-p_value <- mean(t_array >= estim_obs)
+p_value <- mean(t_array >= estim_obs, na.rm = TRUE)
 p_value
 hist(t_array, breaks = 40)
 
 ##############################
 ### betta (tweeked solver) ###
 ##############################
-data_check <- data.frame(sample_data(ps)$breakaway, sample_data(ps)$ba_error, W = sample_data(ps)$W)
-head(data_check)
-
-sum(duplicated(data_check))
-
-chats = data_check[,1]
-ses = data_check[,2]
-X = cbind(1, data_check[,3])
-initial_est = NULL
-
+betta_tweek <- function(chats, ses, X){
   if (isTRUE(is.na(X))) {
     X <- matrix(rep(1, length(chats)), ncol = 1)
   }
@@ -166,10 +179,10 @@ initial_est = NULL
                "enough to find a maximum likelihood solution.",
                "Please try again with a new choice of `initial_est`."))
   }
-
+  
   ssq_u <- output$par[1]
   beta <- output$par[2:length(output$par)]
-
+  
   W <- diag(1/(ssq_u + ses_effective^2))
   vars <- 1/diag(t(X_effective) %*% W %*% X_effective)
   global <- t(beta) %*% (t(X_effective) %*% W %*% X_effective) %*%
@@ -207,9 +220,18 @@ initial_est = NULL
                                                                  (1 + p) - 1)
   mytable$r_squared_wls <- 1 - sum((chats_effective - X_effective %*%
                                       beta)^2)/(sum(chats_effective^2) - n * (mean(chats_effective))^2)
+  
+  return(mytable)
+}
 
-mytable
+chats = sample_data(ps_prune)$breakaway_W
+ses = sample_data(ps_prune)$ba_error_W
+X = x
+initial_est = NULL
 
+betta_tweek(chats,ses,X)$table
+
+### PLOT PAIRED DATA ###
 
 sample_data(ps_prune)$alpha_ci_low <- summary(ba)$lower
 sample_data(ps_prune)$alpha_ci_high <- summary(ba)$upper

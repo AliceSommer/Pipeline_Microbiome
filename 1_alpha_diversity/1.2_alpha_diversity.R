@@ -42,10 +42,14 @@ length(which(empty_species == 0))
 
 ps_prune <- prune_taxa(empty_species != 0, ps)
 
+# ps_prune <- subset_samples(ps_prune, pair_nb != 46)
+
 ### 1. ESTIMATE THE TOTAL ALPHA DIVERSITY FOR EACH SAMPLE ###
 
 # agglomerate data to family level
-ps_fam <- tax_glom(ps_prune, taxrank="Family")
+ps_fam <- tax_glom(ps_prune, taxrank="Genus", NArm = FALSE)
+
+shannon_plug <- sample_shannon(ps_fam)
 
 divnet_phylum <- divnet(ps_fam,
                          ncores = 4)
@@ -53,6 +57,20 @@ divnet_phylum
 
 sample_data(ps_prune)[,"DivNet_W"] <- summary(divnet_phylum$shannon)$estimate
 sample_data(ps_prune)[,"DN_error_W"] <- summary(divnet_phylum$shannon)$error
+sample_data(ps_prune)[,"lower"] <- summary(divnet_phylum$shannon)$lower
+sample_data(ps_prune)[,"upper"] <- summary(divnet_phylum$shannon)$upper
+# add sequencing depth as variable
+sample_data(ps_prune)[,"sample_counts"] <- sample_sums(ps_prune)
+sample_data(ps_prune)[,"shannon_plug"] <- summary(shannon_plug)$estimate
+
+sample_data(ps_prune)[,"dim"] <- as.factor(1:dim(sample_df)[1])
+
+ggplot(sample_data(ps_prune), aes(x = dim)) + 
+  geom_point(aes(y = DivNet_W), colour = "red") + 
+  geom_errorbar(aes(ymin=lower, ymax=upper)) +
+  geom_point(aes(y = shannon_plug), colour = "blue", alpha = .4) +
+  xlab('Samples') + ylab("Shannon estimate")
+
 
 ###############
 ## BREAKAWAY ##
@@ -75,7 +93,8 @@ g_PM_sex <- ggplot(sample_data(ps_prune), aes(x = factor(u3csex), y = DivNet_W, 
 g_arrange <- grid.arrange(g_PM,g_PM_sex, nrow = 1)
 
 ### 2. USE BETTA FUNCTION ###
-x <- cbind(1, sample_data(ps_prune)$W, sample_data(ps_prune)$u3csex, sample_data(ps_prune)$u3tcigsmk1)
+x <- cbind(1, sample_data(ps_prune)$W, sample_data(ps_prune)$u3csex, 
+           sample_data(ps_prune)$u3tcigsmk1)
 
 reg <- betta(summary(divnet_phylum$shannon)$estimate,
              summary(divnet_phylum$shannon)$error, X = x)
@@ -107,7 +126,8 @@ for(i in 1:nrep){
 ## calculate p_value
 p_value <- mean(t_array >= estim_obs)
 p_value
-hist(t_array, breaks = 30)
+hist(t_array, breaks = 30, main = "", xlab = "beta")
+abline(v = estim_obs, col = 'red', lwd = 2, lty = 2)
  
 
 

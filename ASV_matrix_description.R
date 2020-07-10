@@ -156,17 +156,17 @@ g_2 <- ggplot(dat_plot_2, aes(x = values)) +
              linetype = "dashed", colour = "red", size = .3) +
   xlab("observed ASVs/sample")
 
-ggsave(file = '/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/filter_count.jpeg', g_1,
-       dpi=300,
-       width = 170,
-       height = 170,
-       units = "mm")
-
-ggsave(file = '/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/filter_ASV_nr.jpeg', g_2,
-       dpi=300,
-       width = 170,
-       height = 170,
-       units = "mm")
+# ggsave(file = '/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/filter_count.jpeg', g_1,
+#        dpi=300,
+#        width = 170,
+#        height = 170,
+#        units = "mm")
+# 
+# ggsave(file = '/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/filter_ASV_nr.jpeg', g_2,
+#        dpi=300,
+#        width = 170,
+#        height = 170,
+#        units = "mm")
 
 
 
