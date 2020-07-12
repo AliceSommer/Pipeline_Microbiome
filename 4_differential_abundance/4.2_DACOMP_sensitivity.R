@@ -254,10 +254,74 @@ g_sens <- ggplot(dat_plot_low_high, aes(y = value, x = as.factor(variable),
 
 ### check the low p-values ASVs
 
-colnames(X[,which(p_val_dacomp[,1] < 0.03)[1:10]])
+col_num <- which(p.adjust(p_val_dacomp[,2],method = 'BH') < .1)
 
-unname(tax_table(ps)[colnames(X[,which(p_val_dacomp[,1] < 0.03)[1:10]]),])
+unname(tax_table(ps)[col_num,])
 
-unname(tax_table(ps)[colnames(X[,order(p_val_dacomp[,1])[1:10]]),])
+rownames(tax_table(ps)[col_num,])
 
+## reference size plot
+g_ref <- ggplot() + 
+  geom_point(aes(y = ref_size[1,]/ASV_nr[1,], x = perc_seq)) +
+  geom_line(aes(y = ref_size[1,]/ASV_nr[1,], x = perc_seq)) +
+  xlab('prevalence filtering threshold') +
+  ylab('# references/# ASVs') + 
+  scale_x_continuous(name ="prevalence filtering threshold", 
+                   breaks = c(0.00,0.05,0.10,0.15),
+                   labels = c('0%', '5%', '10%', '15%'))
 
+# ggsave(file = 'Pipeline_Microbiome/4_differential_abundance/sensitivity_diff_ab_ref.jpeg',
+#        g_ref,
+#        dpi=300,
+#        width = 80,
+#        height = 60,
+#        units = "mm")
+
+hist(stats_matrix_test[[2]][-1,col_num], breaks = 30, main = "", xlab = "log fold diff. in means")
+abline(v = stats_matrix_test[[2]][1,col_num], col = 'red', lwd = 2, lty = 2)
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Multiple comparison adjustment 
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+### Lee, Forastiere, Miratix, Pillai (2017) method  for multiple comparison adjustment ### 
+
+# STEP 1 to 3: recorded in "stats_matrix"
+dim(stats_matrix_test[[2]])
+# the first row is the observed
+
+# AT STEP 4: consider at each rep. T_rep as T_obs to calculate nrep p-values 
+# for the hypothetical test statistics
+
+hyp_matrix <- stats_matrix_test[[2]][-1,] # remove first row (obs.)
+hyp_p_value <- matrix(NA, ncol = p_test, nrow = nrep)
+
+# based on value (hyp_obs) of each row
+for (r in 1:nrep){
+  if(verbose)
+    if(r%% ceiling(nrep/100) == 1)
+      cat(paste0('Testing rep : ',r,'/',nrep,' \n\r'))
+
+  # calc. hypothetical p_value on each column of the matrix 
+  hyp_p_value[r,] <- apply(hyp_matrix, 2, function(x) mean(x >= x[r]))
+}
+
+# for each rep. take the min. p_value
+min_p_nrep <- apply(hyp_p_value, 1, function(x) min(x, na.rm = TRUE))
+head(min_p_nrep,20)
+
+hist(min_p_nrep, breaks = 60, main = "", xlab = "minimun p-value for each rep.")
+abline(v = p.values.ratio.normalization[117], col = "red")
+text(0.02, y = 1190, 0.00019998, col = "red")
+text(0.06, y = 800, "adj. p-value: 0.0064", col = "darkgreen")
+
+# calculate the proportion of min_p_nrep that is sm/eq. p_value (for obs.)
+p_value_adj <- sapply(p_val_dacomp[,2], function(x) mean(min_p_nrep <= x))
+head(p_value_adj)
+
+head(sort(p_value_adj),50) 
+p_adj_rejections <- which(p_value_adj <= 0.2)  
+p_adj_rejections
+
+unname(tax_table(ps_work)[p_adj_rejections,])
+  

@@ -19,10 +19,19 @@ ASV_table <- readRDS('data_pipeline_microbiome/dada2output/seqtab2020.rds')
 taxon_assign <- readRDS('data_pipeline_microbiome/dada2output/taxa2020.rds')
 
 # load sample/matched_data
-load('data_pipeline_microbiome/dat_matched_PM25.RData')
+load('data_pipeline_microbiome/dat_matched_PM25_bis.RData')
 
+# # load original dataset (try other Ws)
+# df <- read.csv('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/KORA\ DATA/Microbiome_data/KORA_microbiome_variables.csv')
+
+# matched AP data
+# matched_df <- matched_data
 sample_df <- matched_df[order(matched_df$ff4_prid),]
 sample_df$W <- as.factor(sample_df$W)
+
+# # "other" data
+# sample_df <- df[order(df$ff4_prid),]
+# sample_df$W <- as.factor(as.numeric(sample_df$u3tcigsmk == 1))
 samples.out <- as.character(sample_df$ff4_prid)
 rownames(sample_df) <- samples.out
 
@@ -36,52 +45,51 @@ ps
 
 rank_names(ps)
 
-########################
-# Prevalence Filtering #
-########################
+# locate the species that are totally absent in the matched data
+empty_species <- colSums(otu_table(ps))
+length(which(empty_species == 0))
 
-# Compute prevalence of each feature, store as data.frame
-# Prevalence: the number of samples in which a taxa appears at least once.
-prevdf = apply(X = otu_table(ps), 2, function(x) sum(x > 0))
+ps_prune <- prune_taxa(empty_species != 0, ps)
+# ps_prune_female <- subset_samples(ps_prune, u3csex==1)
 
-#  Define prevalence threshold as 5% of total samples
-prevalenceThreshold = 0.1 * nsamples(ps)
-prevalenceThreshold
+## agglomerate to Species ##
+ps_Species <- tax_glom(ps_prune, taxrank = "Species", NArm = FALSE)
+ps_Species
 
-# Execute prevalence  filter, using `prune_taxa()` function
-sum(prevdf >= prevalenceThreshold)
-keepTaxa = colnames(otu_table(ps))[(prevdf >= prevalenceThreshold)]
-ps2 = prune_taxa(keepTaxa, ps)
+## agglomerate to Genus ##
+ps_Genus <- tax_glom(ps_prune, taxrank = "Genus", NArm = FALSE)
+ps_Genus 
 
-# ## agglomerate to Genus ##
-# ps_Genus <- tax_glom(ps, taxrank = "Genus")
-# ps_Genus # 269 taxa
-# 
-# ## agglomerate to Genus ##
-# ps_Family <- tax_glom(ps, taxrank = "Family")
-# ps_Family
+## agglomerate to Family ##
+ps_Family <- tax_glom(ps_prune, taxrank = "Family", NArm = FALSE)
+ps_Family
+
+## agglomerate to Order ##
+ps_Order <- tax_glom(ps_prune, taxrank = "Order", NArm = FALSE)
+ps_Order
+
+## agglomerate to Class ##
+ps_Class <- tax_glom(ps_prune, taxrank = "Class", NArm = FALSE)
+ps_Class
+
+## agglomerate to Phylum ##
+ps_Phylum <- tax_glom(ps_prune, taxrank = "Phylum", NArm = FALSE)
+ps_Phylum
 
 # decide with which agglomeration to work
-ps_work = ps2
+ps_work = ps_Genus
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 set.seed(16)
 # Parameters for method:
-samples_for_reference = 50 # how many samples should be taken for reference
+samples_for_reference = 30 # how many samples should be taken for reference
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Data
 X = as(otu_table(ps_work), "matrix")
 Y = sample_data(ps_work)$W # research variable
-# Z = as.factor(sample_data(ps)$u3csex) # strata
-Z = as.factor(sample_data(ps_work)$pair_nb) # use Z as pairs for the paired test
-
-# we sample some pairs to keep a balanced set
-pair_id = unique(sample_data(ps_work)$pair_nb)
-X = as(otu_table(ps_work), "matrix")
-Y = sample_data(ps_work)$W # research variable
-# Z = as.factor(sample_data(ps)$u3csex) # strata
-Z = as.factor(sample_data(ps_work)$pair_nb) # use Z as pairs for the paired test
+Z = as.factor(sample_data(ps_work)$u3csex) # strata
+# Z = as.factor(sample_data(ps_work)$pair_nb) # use Z as pairs for the paired test
 
 # we sample some pairs to keep a balanced set
 pair_id = unique(sample_data(ps_work)$pair_nb)
@@ -113,14 +121,18 @@ pair_id_sample = sample(pair_id, replace = F, size = samples_for_reference)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Step 1: Split data to reference selection set and test set
 
-condition = sample_data(ps_work)$pair_nb %in% pair_id_sample # warning: can only do that because X, Y, Z have same sample_id order
+# condition = sample_data(ps_work)$pair_nb %in% pair_id_sample # warning: can only do that because X, Y, Z have same sample_id order
+condition = sample(1:samples_for_reference)
 
 X_reference_select = X[condition,]
-X_test = X[!condition,]
+# X_test = X[!condition,] # for paired
+X_test = X[-c(condition),]
 Y_reference_select = Y[condition]
-Y_test = Y[!condition]
+# Y_test = Y[!condition]
+Y_test = Y[-c(condition)]
 Z_reference_select = Z[condition]
-Z_test = Z[!condition]
+# Z_test = Z[!condition]
+Z_test = Z[-c(condition)]
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Step 2: Run marginal tests (TSS normalization) on the reference selection data
@@ -128,7 +140,7 @@ start.time = Sys.time()
 pvals_marginal_result = dacomp.test.with.strata(X = X_reference_select,
                                                 Y = Y_reference_select,
                                                 Z = Z_reference_select,
-                                                Method = 'Wilcoxon-Strata-Asymp',  # 'Wilcoxon-Strata-Asymp' for asymptotic test over strata, 'C_Wilcoxon' for (block) permutation based
+                                                Method = 'C_Wilcoxon',  # 'Wilcoxon-Strata-Asymp' for asymptotic test over strata, 'C_Wilcoxon' for (block) permutation based
                                                 do.block.mean.normalization = F,
                                                 nr.perm = 10000, Minimum_Block_Size = 2,
                                                 normalize_by_DACOMP_ratio = T,
@@ -163,10 +175,10 @@ pvals_DACOMP_RATIO = dacomp.test.with.strata(X = X_test,
                                              Y = Y_test,
                                              Z = Z_test,
                                              taxa_to_normalize_by = reference_obj,
-                                             Method = 'Wilcoxon-Paired', # 'Wilcoxon-Strata-Asymp' for asymptotic test over strata, 'C_Wilcoxon' for (block) permutation based
+                                             Method = 'C_Wilcoxon', # 'Wilcoxon-Strata-Asymp' for asymptotic test over strata, 'C_Wilcoxon' for (block) permutation based
                                              do.block.mean.normalization = F,
                                              nr.perm = 10000, Minimum_Block_Size = 2,
-                                             normalize_by_DACOMP_ratio = T,
+                                             normalize_by_DACOMP_ratio = F,
                                              run.in.parallel = T)
 
 end.time = Sys.time()
@@ -175,8 +187,13 @@ end.time - start.time
 DACOMP_discoveries = which(p.adjust(pvals_DACOMP_RATIO$P.values,method = 'BH')<=0.1)
 DACOMP_discoveries
 
-DSFDR_rejections = which(pvals_DACOMP_RATIO$DSFDR.AdjustedPvalues<=0.1)
+DSFDR_rejections = which(pvals_DACOMP_RATIO$DSFDR.AdjustedPvalues<=0.21)
 DSFDR_rejections
+
+head(sort(pvals_DACOMP_RATIO$DSFDR.AdjustedPvalues),50)
+head(sort(pvals_DACOMP_RATIO$P.values),50)
+
+unname(tax_table(ps_work)[DSFDR_rejections,])
 
 # sanity check:
 # FDR = sum(DACOMP_discoveries>m1)/max(length(DACOMP_discoveries),1) ; FDR
