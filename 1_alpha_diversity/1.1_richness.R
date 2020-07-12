@@ -17,7 +17,7 @@ taxon_assign <- readRDS('dada2output/taxa2020.rds')
 load('dat_matched_PM25_bis.RData')
 
 # load W matrix for randomization test
-load("W_paired_PM25_bi.Rdata")
+load("W_paired_PM25.Rdata")
 
 # load original dataset (try other Ws)
 # df <- read.csv('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/KORA\ DATA/Microbiome_data/KORA_microbiome_variables.csv')
@@ -101,7 +101,9 @@ g_PM_sex <- ggplot(sample_data(ps_prune), aes(x = factor(u3csex), y = breakaway_
 g_arrange <- grid.arrange(g_PM,g_PM_sex, nrow = 1)
 
 ### 2. USE BETTA FUNCTION ###
-x <- cbind(1, sample_data(ps_prune)$W, sample_data(ps_prune)$u3csex)
+x <- cbind(1, sample_data(ps_prune)$W, 
+           sample_data(ps_prune)$u3csex, 
+           sample_data(ps_prune)$u3tcigsmk)
 head(sample_data(ps_prune)$breakaway_W)
 head(sample_data(ps_prune)$ba_error_W)
 
@@ -111,18 +113,19 @@ reg$table
 estim_obs <- reg$table[2,1]
 
 ### 3. PERFORM A RANDOMIZATION TEST ###
-dim(W_paired_smoke)
+dim(W_paired)
 
 # set the number of randomizations
-nrep <- ncol(W_paired_smoke)/100
+nrep <- ncol(W_paired)/100
 
 # create a matrix where the t_rand will be saved
 t_array <- NULL
 
 for(i in 1:nrep){
   print(i)
-  x = cbind(1, W_paired_smoke[,i], 
-             sample_data(ps_prune)$u3csex)
+  x = cbind(1, W_paired[,i], 
+             sample_data(ps_prune)$u3csex, 
+            sample_data(ps_prune)$u3tcigsmk)
   
   reg = betta(sample_data(ps_prune)$breakaway_W,
               sample_data(ps_prune)$ba_error_W, X = x)
@@ -134,7 +137,8 @@ for(i in 1:nrep){
 ## calculate p_value
 p_value <- mean(t_array >= estim_obs, na.rm = TRUE)
 p_value
-hist(t_array, breaks = 40)
+hist(t_array, breaks = 30, main = "", xlab = "beta")
+abline(v = estim_obs, col = 'red', lwd = 2, lty = 2)
 
 ##############################
 ### betta (tweeked solver) ###
