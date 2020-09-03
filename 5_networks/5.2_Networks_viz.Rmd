@@ -1,6 +1,8 @@
 ---
 title: "networks viz"
-output: html_document
+output:
+md_document:
+    variant: markdown_github
 ---
 
 ```{r setup, include=FALSE}
@@ -139,8 +141,6 @@ g_sum <- graph.data.frame(inc_com_sum[,c(1,2)], directed = F)
 V(g_sum)$type <- V(g_sum)$name %in% inc_com_sum[,1] #the first column of edges is TRUE type
 
 # node size represents the number of OTUs in each module
-table(props_W$clustering$clust1)
-table(props_W$clustering$clust2)
 # add community name (without T or C)
 V(g_sum)$com_nr <- as.numeric(unlist(strsplit(V(g_sum)$name, "_"))[c(TRUE,FALSE)])
 V(g_sum)$com_size[V(g_sum)$type == TRUE] <- table(props_W$clustering$clust1)[V(g_sum)$com_nr[V(g_sum)$type == TRUE]] # control sizes
