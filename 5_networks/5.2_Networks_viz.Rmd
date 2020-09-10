@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 For more details on using the NetCoMi package see <https://github.com/stefpeschel/NetCoMi>.
 
-```{r, echo=FALSE, message=FALSE}
+```{r, echo=FALSE, message=FALSE, warning = FALSE}
 library(NetCoMi)
 library(metagMisc)
 library(phyloseq)
@@ -206,6 +206,7 @@ plot(props_W,
      edgeTranspLow = 20, edgeTranspHigh = 20,
      groupNames = c("Polluted air", "Clean air"))
 ```
+
 #### Module 5 (clean air) split
 
 ```{r, fig.height=8, fig.width=15}
