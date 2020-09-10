@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 For more details on using the NetCoMi package see <https://github.com/stefpeschel/NetCoMi>.
 
-```{r, echo=FALSE, message=FALSE}
+```{r, echo=FALSE, message=FALSE, warning = FALSE}
 library(NetCoMi)
 library(metagMisc)
 library(phyloseq)
@@ -106,7 +106,7 @@ nclust_2 <- max(as.numeric(names(table(props_W$clustering$clust2))))+1
 nclust <- nclust_1 + nclust_2
 col <- sample(polychrome(nclust))
 
-which(tax_table(ps_Genus_prune)[,"Genus"] == "Family_XIII_AD3011_group")
+# which(tax_table(ps_Genus_prune)[,"Genus"] == "Family_XIII_AD3011_group")
 # 24  40  53 105
 
 shapeVec <- rep(1, ncol(otu_table(ps_Genus_prune)))
@@ -162,7 +162,7 @@ layout_bi_rows <- layout_as_bipartite(g_sum, hgap = 50, vgap = 60, maxiter = 100
 legend_cats <- data.frame(size_circle = V(g_sum)$com_size/2,
                           size_text = V(g_sum)$com_size)
 legend_cats <- legend_cats[order(legend_cats$size_circle), ]
-dim(legend_cats)
+# dim(legend_cats)
 legend_cats <- legend_cats[c(1,20,24),]
 
 # order by vertex size
