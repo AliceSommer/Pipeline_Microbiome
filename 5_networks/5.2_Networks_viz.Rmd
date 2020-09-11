@@ -116,6 +116,7 @@ names(shapeVec) <- names(phyl_ps_prune)
 
 plot_cluster <- plot(props_W,
      layout = FA_coord,
+     # layout = "layout_with_fr",
      sameLayout = TRUE, layoutGroup = 1, 
      labels = list(props_W$clustering$clust1, props_W$clustering$clust2), 
      labelFont = 1, cexLabels = 2,
@@ -203,7 +204,7 @@ plot(props_W,
      nodeShape = c("circle", "triangle"),
      featVecShape = shapeVec[names_clust],
      nodeFilterPar = names_clust,
-     edgeTranspLow = 20, edgeTranspHigh = 20,
+     edgeTranspLow = 10, edgeTranspHigh = 10,
      groupNames = c("Polluted air", "Clean air"))
 ```
 
@@ -211,7 +212,6 @@ plot(props_W,
 
 ```{r, fig.height=8, fig.width=15}
 names_clust <- as.character(names(which(props_W$clustering$clust2 == 5)))
-# labels_phyl <- substr(as.character(phyl_ps_prune[names_clust]), 1, 3)
 col_module <- unique(plot_cluster$q1$Arguments$color[names_clust],
                      plot_cluster$q2$Arguments$color[names_clust])
 
@@ -229,7 +229,7 @@ plot(props_W,
      nodeShape = c("circle", "triangle"),
      featVecShape = shapeVec[names_clust],
      nodeFilterPar = names_clust,
-     edgeTranspLow = 20, edgeTranspHigh = 20,
+     edgeTranspLow = 10, edgeTranspHigh = 10,
      groupNames = c("Polluted air", "Clean air"))
 ```
 
@@ -248,3 +248,33 @@ corrplot(cor_0, method = "color", tl.col = "grey", mar=c(0,0,5,0),
 corrplot(cor_1, method = "color", tl.col = "grey", mar=c(0,0,5,0),
          col = col1(100), title = "Clean air")
 ```
+
+### "Bacteroides" and its neighbors
+
+```{r}
+# subset Seq286 and its neighbors
+neigh_1 <- names(which(props_W$input$assoMat1[,248] > 0))
+neigh_2 <- names(which(props_W$input$assoMat2[,248] > 0))
+
+names_neigh <- unique(c(neigh_1, neigh_2))
+
+labels_phyl <- substr(as.character(phyl_ps_prune[names_neigh]), 1, 3)
+
+plot(props_W, 
+     sameLayout = TRUE, layoutGroup = 2, 
+     labels = labels_phyl, 
+     labelFont = 1, cexLabels = 1.5,
+     nodeColor = "cluster",
+     colorVec =  col_module,
+     sameColThresh = 30,
+     nodeTransp = 40, 
+     borderCol = "gray40", highlightHubs = FALSE,
+     nodeSize = "fix", cexNodes = 1.2, 
+     nodeFilter = "names",
+     nodeShape = c("circle", "triangle"),
+     featVecShape = shapeVec[names_neigh],
+     nodeFilterPar = names_neigh,
+     edgeTranspLow = 10, edgeTranspHigh = 10,
+     groupNames = c("Polluted air", "Clean air"))
+```
+
