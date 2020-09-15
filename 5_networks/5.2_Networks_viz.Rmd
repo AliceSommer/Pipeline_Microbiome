@@ -64,17 +64,17 @@ props_W_igraph <- graph_from_adjacency_matrix(props_W$input$adjaMat1, # I used a
                                               weighted = TRUE)
 
 
-FA_coord <- layout.forceatlas2(props_W_igraph, iterations=2000, plotstep=2001)
-rownames(FA_coord) <- names(phyl_ps_prune)
+# FA_coord <- layout.forceatlas2(props_W_igraph, iterations=2000, plotstep=2001)
+# rownames(FA_coord) <- names(phyl_ps_prune)
 
 plot(props_W, 
-     layout = FA_coord,
-     # layout = "layout_with_fr",
+     # layout = FA_coord,
+     layout = "layout_with_fr",
      sameLayout = TRUE, layoutGroup = 1, labels = FALSE, 
      featVecCol = phyl_ps_prune, nodeColor = "feature",nodeTransp = 55,
      borderCol = "gray40", highlightHubs = FALSE,nodeSize = "normCounts", 
      nodeSizeSpread = 1, cexNodes = 5, cexTitle = .8,
-     edgeTranspLow = 70, edgeTranspHigh = 50,
+     edgeTranspLow = 10, edgeTranspHigh = 10,
      mar = c(3,5,3,2), groupNames = c("Polluted air", "Clean air"))
 legend("top", 
        inset = .05, title = "phylum:",
@@ -115,8 +115,8 @@ shapeVec[248] <- 2
 names(shapeVec) <- names(phyl_ps_prune)
 
 plot_cluster <- plot(props_W,
-     layout = FA_coord,
-     # layout = "layout_with_fr",
+     # layout = FA_coord,
+     layout = "layout_with_fr",
      sameLayout = TRUE, layoutGroup = 1, 
      labels = list(props_W$clustering$clust1, props_W$clustering$clust2), 
      labelFont = 1, cexLabels = 2,
@@ -233,7 +233,7 @@ plot(props_W,
      groupNames = c("Polluted air", "Clean air"))
 ```
 
-### Correlation structure of module 7
+### Correlation structure of module 5
 
 ```{r, echo = TRUE, fig.height=8, fig.width=15}
 col1 <- colorRampPalette(c("#7F0000", "red", "#FF7F00", "yellow", "white",
