@@ -51,6 +51,27 @@ load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/ps_to
 load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/props_W_Gen_smoke.RData')
 ```
 
+```{r, echo=FALSE}
+load("/Users/alicesommer/Desktop/DACOMP_cluster/results/ratio_matrix_test_save3.RData")
+# check sequence names differentially abundant
+diff_node_names <- rownames(tax_table(ps_Genus_prune)[!is.na(ratio_matrix_test_save[1,]),])
+length(diff_node_names)
+```
+
+```{r}
+# row_sum_1 <- apply(props_W$input$normCounts1, 1,sum)
+# row_sum_2 <- apply(props_W$input$normCounts2, 1,sum)
+# norm_counts_1 <- clr(props_W$input$normCounts1 + .5)
+# norm_counts_2 <- clr(props_W$input$normCounts2 + .5)
+# 
+# norm_counts_1[props_W$input$normCounts1 == 0] <- 0
+# norm_counts_2[props_W$input$normCounts2 == 0] <- 0
+# 
+# props_W$input$normCounts1 <- norm_counts_1
+# props_W$input$normCounts2 <- norm_counts_2
+```
+
+
 We plot the results of the netAnalyze function.
 
 ```{r, echo=TRUE, fig.height=9, fig.width=16}
@@ -74,11 +95,12 @@ set.seed(1)
 
 shapeVec <- rep(1, ncol(otu_table(ps_Genus_prune)))
 shapeVec[c(24, 40, 53, 105)] <- 2
-shapeVec[c(28,  50,  77,  87,  90, 99, 110, 128, 131, 70, 112)] <- 3
+shapeVec[c(28,  50,  77,  87,  90, 99, 110, 128, 131)] <- 3
+shapeVec[c(70, 112)] <- 4
 names(shapeVec) <- names(phyl_ps_prune)
 
 
-plot(props_W, 
+plot_props <- plot(props_W, 
      layout = "layout_with_fr",
      sameLayout = TRUE, layoutGroup = 1, 
      labels = FALSE,
@@ -88,10 +110,11 @@ plot(props_W,
      borderCol = "gray40", highlightHubs = FALSE, 
      nodeSize = "normCounts", 
      cexNodes = 1, 
+     # nodeSizeSpread = 3,
      cexTitle = 2,
      edgeTranspLow = 30, 
      edgeTranspHigh = 30,
-     nodeShape = c("circle", "triangle","square"),
+     nodeShape = c("circle", "triangle","square","diamond"),
      featVecShape = shapeVec,
      rmSingles = "inboth",
      mar = c(6,5,3,2), groupNames = c("Smoking", "Non-smoking"))
@@ -107,11 +130,12 @@ legend("bottom",
 legend("bottom", 
        inset = .19, 
        title = "differentially abundant:",
-       legend=c("Genus (Christensenellaceae-R-7-group)","Class"), pch = c(2,0), 
+       legend=c("Genus (Christensenellaceae-R-7-group)","Family (Coriobacteriaceae)","Class (Mollicutes)"), 
+       pch = c(2,0,5), 
        bty="n", horiz = FALSE) 
 legend("bottom", 
        inset = .1,
-       legend = "node size: sum raw counts",
+       legend = "node size: median raw counts",
        bty="n", horiz = TRUE) 
 ```
 
@@ -148,8 +172,8 @@ plot_cluster <- plot(props_W,
      sameColThresh = 2,
      nodeTransp = 40, 
      borderCol = "gray40", highlightHubs = FALSE,
-     nodeSize = "fix", cexNodes = 1, 
-     nodeShape = c("circle", "triangle", "square"),
+     nodeSize = "normCounts", cexNodes = 1, 
+     nodeShape = c("circle", "triangle", "square","diamond"),
      featVecShape = shapeVec,
      rmSingles = "inboth",
      cexTitle = 2,
@@ -164,7 +188,8 @@ legend("bottom",
 legend("bottom", 
        inset = .17, 
        title = "differentially abundant:",
-       legend=c("Genus (Christensenellaceae-R-7-group)","Class"), pch = c(2,0), 
+       legend=c("Genus (Christensenellaceae-R-7-group)","Family (Coriobacteriaceae)","Class (Mollicutes)"), 
+       pch = c(2,0,5), 
        bty="n", horiz = FALSE) 
 ```
 
@@ -195,7 +220,11 @@ V(g_sum)$color=gsub("FALSE","palegreen3",V(g_sum)$color)
 V(g_sum)$color=gsub("TRUE","mediumpurple",V(g_sum)$color)
 E(g_sum)$weight <- as.numeric(inc_com_sum[,3])
 
-layout_bi_rows <- layout_as_bipartite(g_sum, hgap = 50, vgap = 60, maxiter = 1000)
+layout_bi_rows <- layout_as_bipartite(g_sum, hgap = 50, vgap = 60, maxiter = 1)
+layout_bi_rows <- layout_bi_rows[,2:1]
+
+# layout_bi_rows[,2] <- c(sort(layout_bi_rows[V(g_sum)$type == TRUE,2], decreasing = TRUE)[order(V(g_sum)$com_size[V(g_sum)$type == TRUE], decreasing = TRUE)],
+#                     sort(layout_bi_rows[V(g_sum)$type == FALSE,2], decreasing = TRUE)[order(V(g_sum)$com_size[V(g_sum)$type == FALSE], decreasing = TRUE)])
 
 legend_cats <- data.frame(size_circle = V(g_sum)$com_size/2,
                           size_text = V(g_sum)$com_size)
@@ -206,7 +235,7 @@ legend_cats <- legend_cats[c(1,20,24),]
 # order by vertex size
 par(mfrow=c(1,1))
 plot(g_sum, vertex.size = V(g_sum)$com_size/2, edge.width=E(g_sum)$weight/5, 
-     layout=layout_bi_rows[,2:1], vertex.label=V(g_sum)$com_nr,
+     layout=layout_bi_rows, vertex.label=V(g_sum)$com_nr,
      vertex.label.dist=5, vertex.label.degree = pi*V(g_sum)$type, 
      margin = -.2, asp = 2, edge.arrow.size=.7)
 
@@ -237,7 +266,7 @@ plot(props_W,
      borderCol = "gray40", highlightHubs = FALSE,
      nodeSize = "fix", cexNodes = 1, 
      nodeFilter = "names",
-     nodeShape = c("circle", "triangle", "square"),
+     nodeShape = c("circle", "triangle", "square","diamond"),
      featVecShape = shapeVec[names_clust],
      nodeFilterPar = names_clust,
      edgeTranspLow = 10, edgeTranspHigh = 10,
@@ -262,7 +291,7 @@ plot(props_W,
      borderCol = "gray40", highlightHubs = FALSE,
      nodeSize = "fix", cexNodes = 1, 
      nodeFilter = "names",
-     nodeShape = c("circle", "triangle","square"),
+     nodeShape = c("circle", "triangle","square","diamond"),
      featVecShape = shapeVec[names_clust],
      nodeFilterPar = names_clust,
      edgeTranspLow = 10, edgeTranspHigh = 10,
