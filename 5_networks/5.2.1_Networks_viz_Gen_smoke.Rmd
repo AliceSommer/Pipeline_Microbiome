@@ -272,30 +272,31 @@ plot(props_W,
      edgeTranspLow = 10, edgeTranspHigh = 10,
      groupNames = c("Smoking (community 2)", "Non-smoking"))
 ```
+
 ### Module 1 split (non-smoking)
 
 ```{r, fig.height=8, fig.width=15}
-names_clust <- as.character(names(which(props_W$clustering$clust2 == 1)))
+names_clust <- as.character(names(props_W$clustering$clust2[props_W$clustering$clust2 %in% c(1,2)]))
 # labels_phyl <- substr(as.character(phyl_ps_prune[names_clust]), 1, 3)
-# col_module <- unique(plot_cluster$q1$Arguments$color[names_clust],
-#                     plot_cluster$q2$Arguments$color[names_clust])
+col_module <- unique(plot_cluster$q1$Arguments$color[names_clust],
+                    plot_cluster$q2$Arguments$color[names_clust])
 
 plot(props_W, 
-     sameLayout = TRUE, layoutGroup = 2, 
+     sameLayout = TRUE, layoutGroup = 1,
      # labels = list(props_W$clustering$clust1[names_clust], props_W$clustering$clust2[names_clust]), 
      labelFont = 1, cexLabels = 1.5,
-     nodeColor = "cluster",
-     # colorVec =  col_module,
-     sameClustCol = FALSE,
-     nodeTransp = 40, 
+     # nodeColor = "cluster",
+     colorVec =  col_module,
+     # sameClustCol = FALSE,
+     nodeTransp = 40,
      borderCol = "gray40", highlightHubs = FALSE,
-     nodeSize = "fix", cexNodes = 1, 
+     nodeSize = "fix", cexNodes = .8, 
      nodeFilter = "names",
      nodeShape = c("circle", "triangle","square","diamond"),
      featVecShape = shapeVec[names_clust],
      nodeFilterPar = names_clust,
      edgeTranspLow = 10, edgeTranspHigh = 10,
-     groupNames = c("Smoking", "Non-smoking (community 1)"))
+     groupNames = c("Smoking", "Non-smoking"))
 ```
 
 ### Correlation structure of module 1 (non-smoking)
