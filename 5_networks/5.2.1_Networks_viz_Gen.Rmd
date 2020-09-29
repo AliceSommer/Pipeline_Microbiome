@@ -51,6 +51,10 @@ load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/ps_to
 load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/props_W_Gen.RData')
 ```
 
+```{r, echo=FALSE}
+which(tax_table(ps_Genus_prune)[,"Genus"] == "Blautia")
+```
+
 We plot the results of the netAnalyze function.
 
 ```{r, echo=TRUE, fig.height=9, fig.width=16}
@@ -59,32 +63,40 @@ names(phyl_ps_prune) <- rownames(tax_table(ps_Genus_prune)[, 'Phylum'])
 phylcol <- rainbow(length(unique(phyl_ps_prune)))
 
 set.seed(1)
-props_W_igraph <- graph_from_adjacency_matrix(props_W$input$adjaMat1, 
-                                              #mode = "undirected",
-                                              weighted = TRUE)
 
-
-FA_coord <- layout.forceatlas2(props_W_igraph, iterations=2000, plotstep=2001)
-rownames(FA_coord) <- names(phyl_ps_prune)
+shapeVec <- rep(1, ncol(otu_table(ps_Genus_prune)))
+shapeVec[c(116,2,5)] <- 2
+names(shapeVec) <- names(phyl_ps_prune)
 
 plot(props_W, 
-     # layout = FA_coord,
-     layout = "layout_with_fr",
-     sameLayout = TRUE, layoutGroup = 1, labels = FALSE, 
-     featVecCol = phyl_ps_prune, nodeColor = "feature",nodeTransp = 55,
-     borderCol = "gray40", highlightHubs = FALSE, nodeSize = "normCounts", 
-     nodeSizeSpread = 1, cexNodes = 5, cexTitle = .8,
-     edgeTranspLow = 10, edgeTranspHigh = 10,
      # rmSingles = "inboth",
-     mar = c(3,5,3,2), groupNames = c("Polluted air", "Clean air"))
+     layout = "layout_with_fr",
+     sameLayout = TRUE, layoutGroup = 1, labels = FALSE,
+     featVecCol = phyl_ps_prune, nodeColor = "feature", 
+     nodeTransp = 20,
+     borderCol = "gray40", highlightHubs = FALSE, 
+     nodeSize = "normCounts",
+     nodeSizeSpread = 1, 
+     cexNodes = 2, cexTitle = 2,
+     edgeTranspLow = 30, edgeTranspHigh = 30,
+     nodeShape = c("circle", "triangle"),
+     featVecShape = shapeVec,
+     mar = c(6,5,3,2), groupNames = c("Polluted air", "Clean air"))
 legend("top", 
        inset = .05, title = "phylum:",
        legend=levels(phyl_ps_prune), ncol = 2,
        col=phylcol, pt.bg = phylcol, bty = "n", pch=16) 
 legend("bottom", 
-       inset = .15, title = "weights:",
-       legend=c("positive","negative"), lty = 1,
-       col=c("green","red"), bty="n", horiz = TRUE) 
+       inset = .13, 
+       title = "weights:",
+       legend=c("+","-"), lty = 1, lwd = 2,
+       col=c("darkgreen","red"), bty="n", horiz = TRUE) 
+legend("bottom", 
+       inset = .19, 
+       title = "differentially abundant:",
+       legend=c("Genus (Marvinbryantia (top right), Blautia (bottom left), Bacteroides)"), 
+       pch = c(2,0,5), 
+       bty="n", horiz = FALSE) 
 ```
 
 ## Network properties
@@ -107,30 +119,36 @@ nclust_2 <- max(as.numeric(names(table(props_W$clustering$clust2))))+1
 nclust <- nclust_1 + nclust_2
 col <- sample(polychrome(nclust))
 
-# which(tax_table(ps_Genus_prune)[,"Genus"] == "Marvinbryantia")
-# 116
-
-shapeVec <- rep(1, ncol(otu_table(ps_Genus_prune)))
-shapeVec[116] <- 2
-names(shapeVec) <- names(phyl_ps_prune)
-
+set.seed(1)
 plot_cluster <- plot(props_W,
-     # layout = FA_coord,
      layout = "layout_with_fr",
      sameLayout = TRUE, layoutGroup = 1, 
-     labels = list(props_W$clustering$clust1, props_W$clustering$clust2), 
+     labels = FALSE, 
      labelFont = 1, cexLabels = 2,
      nodeColor = "cluster",
      colorVec = col,
-     sameColThresh = 20,
+     sameColThresh = 2,
      nodeTransp = 40, 
      borderCol = "gray40", highlightHubs = FALSE,
-     nodeSize = "fix", cexNodes = 2, 
+     nodeSize = "normCounts", cexNodes = 1, 
      nodeShape = c("circle", "triangle"),
      featVecShape = shapeVec,
      # rmSingles = "inboth",
-     edgeTranspLow = 10, edgeTranspHigh = 10,
-     groupNames = c("Polluted air", "Clean air"))
+     cexTitle = 2,
+     edgeTranspLow = 30, 
+     edgeTranspHigh = 30,
+     mar = c(6,5,3,2), groupNames = c("Polluted air", "Clean air"))
+legend("bottom", 
+       inset = .11, 
+       title = "weights:",
+       legend=c("+","-"), lty = 1, lwd = 2,
+       col=c("darkgreen","red"), bty="n", horiz = TRUE) 
+legend("bottom", 
+       inset = .17, 
+       title = "differentially abundant:",
+       legend=c("Genus (Marvinbryantia (top right), Blautia (bottom left), Bacteroides)"),  
+       pch = c(2,0,5), 
+       bty="n", horiz = FALSE) 
 ```
 
 #### Shared nodes among modules
@@ -165,7 +183,7 @@ layout_bi_rows <- layout_as_bipartite(g_sum, hgap = 50, vgap = 60, maxiter = 100
 legend_cats <- data.frame(size_circle = V(g_sum)$com_size/2,
                           size_text = V(g_sum)$com_size)
 legend_cats <- legend_cats[order(legend_cats$size_circle), ]
-dim(legend_cats)
+#dim(legend_cats)
 legend_cats <- legend_cats[c(1,25,34),]
 
 # order by vertex size
@@ -193,7 +211,7 @@ col_module <- unique(plot_cluster$nodecolor$nodecol1[names_clust],
 
 plot(props_W, 
      sameLayout = TRUE, layoutGroup = 1, 
-     labels = list(props_W$clustering$clust1[names_clust], props_W$clustering$clust2[names_clust]), 
+     # labels = list(props_W$clustering$clust1[names_clust], props_W$clustering$clust2[names_clust]), 
      labelFont = 1, cexLabels = 1.5,
      nodeColor = "cluster",
      colorVec = col,
@@ -207,3 +225,12 @@ plot(props_W,
      edgeTranspLow = 10, edgeTranspHigh = 10,
      groupNames = c("Polluted air", "Clean air"))
 ```
+```{r}
+names_clust_PM <- as.character(names(which(props_W$clustering$clust1 == 3)))
+names_clust_PM
+# save(names_clust_PM, file= "/Users/alicesommer/Desktop/DACOMP_cluster/results/PM_connect_seq.RData")
+```
+```{r}
+tax_table(ps_Genus_prune)[c("Seq46","Seq21","Seq56","Seq517","Seq288"),]
+```
+
