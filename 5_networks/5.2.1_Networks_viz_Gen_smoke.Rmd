@@ -52,13 +52,13 @@ load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/props
 ```
 
 ```{r, echo=FALSE}
-load("/Users/alicesommer/Desktop/DACOMP_cluster/results/ratio_matrix_test_save3.RData")
-# check sequence names differentially abundant
-diff_node_names <- rownames(tax_table(ps_Genus_prune)[!is.na(ratio_matrix_test_save[1,]),])
-length(diff_node_names)
+# load("/Users/alicesommer/Desktop/DACOMP_cluster/results/ratio_matrix_test_save3.RData")
+# # check sequence names differentially abundant
+# diff_node_names <- rownames(tax_table(ps_Genus_prune)[!is.na(ratio_matrix_test_save[1,]),])
+# length(diff_node_names)
 ```
 
-```{r}
+```{r, echo=FALSE}
 # row_sum_1 <- apply(props_W$input$normCounts1, 1,sum)
 # row_sum_2 <- apply(props_W$input$normCounts2, 1,sum)
 # norm_counts_1 <- clr(props_W$input$normCounts1 + .5)
@@ -69,6 +69,11 @@ length(diff_node_names)
 # 
 # props_W$input$normCounts1 <- norm_counts_1
 # props_W$input$normCounts2 <- norm_counts_2
+```
+
+```{r, echo=FALSE}
+# which(tax_table(ps_Genus_prune)[,"Class"] == "Mollicutes")
+# tax_table(ps_Genus_prune)[which(tax_table(ps_Genus_prune)[,"Class"] == "Mollicutes"),]
 ```
 
 
@@ -130,7 +135,7 @@ legend("bottom",
 legend("bottom", 
        inset = .19, 
        title = "differentially abundant:",
-       legend=c("Genus (Christensenellaceae-R-7-group)","Family (Coriobacteriaceae)","Class (Mollicutes)"), 
+       legend=c("Genus (Christensenellaceae-R-7-group)","Family (Coriobacteriaceae, nb. ASV = 9)","Class (Mollicutes, nb. ASV = 2)"), 
        pch = c(2,0,5), 
        bty="n", horiz = FALSE) 
 legend("bottom", 
