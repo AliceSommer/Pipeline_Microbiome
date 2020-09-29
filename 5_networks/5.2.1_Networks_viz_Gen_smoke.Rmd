@@ -135,7 +135,7 @@ legend("bottom",
 legend("bottom", 
        inset = .19, 
        title = "differentially abundant:",
-       legend=c("Genus (Christensenellaceae-R-7-group)","Family (Coriobacteriaceae, nb. ASV = 9)","Class (Mollicutes, nb. ASV = 2)"), 
+       legend=c("Genus (Marvinbryantia)","Family (Coriobacteriaceae, nb. ASV = 9)","Class (Mollicutes, nb. ASV = 2)"), 
        pch = c(2,0,5), 
        bty="n", horiz = FALSE) 
 legend("bottom", 
@@ -302,6 +302,15 @@ plot(props_W,
      nodeFilterPar = names_clust,
      edgeTranspLow = 10, edgeTranspHigh = 10,
      groupNames = c("Smoking", "Non-smoking"))
+```
+```{r}
+load("/Users/alicesommer/Desktop/DACOMP_cluster/results/PM_connect_seq.RData")
+sum(names_clust_PM %in% names_clust)
+overlap_seq <- names_clust[which(names_clust_PM %in% names_clust)]
+overlap_seq
+
+props_W$clustering$clust1[overlap_seq]
+props_W$clustering$clust2[overlap_seq]
 ```
 
 ### Correlation structure of module 1 (non-smoking)
