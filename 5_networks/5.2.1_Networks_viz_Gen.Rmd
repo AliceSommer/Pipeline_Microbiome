@@ -52,7 +52,9 @@ load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/props
 ```
 
 ```{r, echo=FALSE}
-which(tax_table(ps_Genus_prune)[,"Genus"] == "Blautia")
+# which(tax_table(ps_Genus_prune)[,"Genus"] == "Marvinbryantia")
+
+tax_table(ps_Genus_prune)[c(116,5,47),]
 ```
 
 We plot the results of the netAnalyze function.
@@ -65,17 +67,17 @@ phylcol <- rainbow(length(unique(phyl_ps_prune)))
 set.seed(1)
 
 shapeVec <- rep(1, ncol(otu_table(ps_Genus_prune)))
-shapeVec[c(116,2,5)] <- 2
+shapeVec[c(116,5,47)] <- 2
 names(shapeVec) <- names(phyl_ps_prune)
 
 plot(props_W, 
-     # rmSingles = "inboth",
+     rmSingles = "inboth",
      layout = "layout_with_fr",
      sameLayout = TRUE, layoutGroup = 1, labels = FALSE,
      featVecCol = phyl_ps_prune, nodeColor = "feature", 
      nodeTransp = 20,
      borderCol = "gray40", highlightHubs = FALSE, 
-     nodeSize = "normCounts",
+     nodeSize = "clr",
      nodeSizeSpread = 1, 
      cexNodes = 2, cexTitle = 2,
      edgeTranspLow = 30, edgeTranspHigh = 30,
@@ -94,7 +96,7 @@ legend("bottom",
 legend("bottom", 
        inset = .19, 
        title = "differentially abundant:",
-       legend=c("Genus (Marvinbryantia (top right), Blautia (bottom left), Bacteroides)"), 
+       legend=c("Genus"), 
        pch = c(2,0,5), 
        bty="n", horiz = FALSE) 
 ```
@@ -102,12 +104,12 @@ legend("bottom",
 ## Network properties
 
 ```{r}
-summary(props_W)[[1]]
+# summary(props_W)
 ```
 ### Modularity (clusters/modules)
 
 ```{r}
-summary(props_W)[[2]]
+# summary(props_W)[[2]]
 ```
 
 
@@ -130,10 +132,10 @@ plot_cluster <- plot(props_W,
      sameColThresh = 2,
      nodeTransp = 40, 
      borderCol = "gray40", highlightHubs = FALSE,
-     nodeSize = "normCounts", cexNodes = 1, 
+     nodeSize = "clr", cexNodes = 1, 
      nodeShape = c("circle", "triangle"),
      featVecShape = shapeVec,
-     # rmSingles = "inboth",
+     rmSingles = "inboth",
      cexTitle = 2,
      edgeTranspLow = 30, 
      edgeTranspHigh = 30,
@@ -146,7 +148,7 @@ legend("bottom",
 legend("bottom", 
        inset = .17, 
        title = "differentially abundant:",
-       legend=c("Genus (Marvinbryantia (top right), Blautia (bottom left), Bacteroides)"),  
+       legend=c("Genus"),  
        pch = c(2,0,5), 
        bty="n", horiz = FALSE) 
 ```
@@ -212,12 +214,17 @@ col_module <- unique(plot_cluster$nodecolor$nodecol1[names_clust],
 plot(props_W, 
      sameLayout = TRUE, layoutGroup = 1, 
      # labels = list(props_W$clustering$clust1[names_clust], props_W$clustering$clust2[names_clust]), 
-     labelFont = 1, cexLabels = 1.5,
-     nodeColor = "cluster",
-     colorVec = col,
-     sameColThresh = 20,
+     charToRm = "Seq",
+     labelFont = 1, 
+     cexLabels = 1,
+     labelScale = FALSE,
+     nodeColor = "colorVec",
+     colorVec = list(plot_cluster$nodecolor$nodecol1[names_clust],
+                  plot_cluster$nodecolor$nodecol2[names_clust]),
+     sameClustCol = FALSE,
+     # sameColThresh = 20,
      borderCol = "gray40", highlightHubs = FALSE,
-     nodeSize = "fix", cexNodes = 1, 
+     nodeSize = "clr", cexNodes = 1.5, 
      nodeFilter = "names",
      nodeShape = c("circle", "triangle"),
      featVecShape = shapeVec[names_clust],
@@ -225,12 +232,8 @@ plot(props_W,
      edgeTranspLow = 10, edgeTranspHigh = 10,
      groupNames = c("Polluted air", "Clean air"))
 ```
+
 ```{r}
-names_clust_PM <- as.character(names(which(props_W$clustering$clust1 == 3)))
-names_clust_PM
-# save(names_clust_PM, file= "/Users/alicesommer/Desktop/DACOMP_cluster/results/PM_connect_seq.RData")
-```
-```{r}
-tax_table(ps_Genus_prune)[c("Seq46","Seq21","Seq56","Seq517","Seq288"),]
+tax_table(ps_Genus_prune)[c("Seq46","Seq21","Seq56","Seq517","Seq288","Seq11"),]
 ```
 
