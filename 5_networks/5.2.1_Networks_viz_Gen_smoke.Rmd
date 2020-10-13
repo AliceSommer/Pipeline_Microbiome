@@ -136,7 +136,7 @@ legend("bottom",
 legend("bottom", 
        inset = .19, 
        title = "differentially abundant:",
-       legend=c("Genus differential abundant"), 
+       legend=c("Genus"), 
        pch = c(2,0,5), 
        bty="n", horiz = FALSE) 
 legend("bottom", 
@@ -195,7 +195,7 @@ legend("bottom",
 legend("bottom", 
        inset = .17, 
        title = "differentially abundant:",
-       legend=c("Genus (Christensenellaceae-R-7-group)","Family (Coriobacteriaceae)","Class (Mollicutes)"), 
+       legend=c("Genus"), 
        pch = c(2,0,5), 
        bty="n", horiz = FALSE) 
 ```
@@ -282,6 +282,7 @@ plot(props_W,
      edgeTranspLow = 10, edgeTranspHigh = 10,
      groupNames = c("Smoking", "Non-smoking"))
 ```
+
 ```{r, echo = FALSE}
 # load("/Users/alicesommer/Desktop/DACOMP_cluster/results/PM_connect_seq.RData")
 # sum(names_clust_PM %in% names_clust)
