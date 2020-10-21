@@ -189,9 +189,11 @@ g <- grid.arrange(g_age, g_bmi, g_sex, g_alcohol, g_phys, g_smoke, g_educ, g_sea
 grep('u3tsysmm', colnames(data)); grep('u3lk_chola',colnames(data)); grep('u3lk_tria',colnames(data)) ## +2 cos no need of WHR
 dat_melt_cont_1 = melt(data, id.vars = "W", measure.vars = c(18:19,43:46))
 
-lvls = levels(as.factor(dat_melt_cont_1$variable))
-nacounts <- by(dat_melt_cont_1, as.factor(dat_melt_cont_1$variable), function(x) sum(is.na(x$value)))
-levels(dat_melt_cont_1$variable) = paste(lvls," (NA=",as.integer(nacounts),")",sep="")
+# lvls = levels(as.factor(dat_melt_cont_1$variable))
+# # nacounts <- by(dat_melt_cont_1, as.factor(dat_melt_cont_1$variable), function(x) sum(is.na(x$value)))
+# # levels(dat_melt_cont_1$variable) = paste(lvls," (NA=",as.integer(nacounts),")",sep="")
+
+levels(dat_melt_cont_1$variable) <- c('sys. BP', 'dia. BP', 'cholesterol', 'HDL chol.', 'LDL chol.', 'triglyceride')
 
 g_lab <- ggplot(dat_melt_cont_1, aes(x=value)) +
   geom_density(aes(group=factor(W), fill=factor(W)),
@@ -205,6 +207,8 @@ g_lab <- ggplot(dat_melt_cont_1, aes(x=value)) +
 grep('u3tmi', colnames(data)); grep('u3tca',colnames(data))
 
 dat_melt_bin2 = melt(data, id.vars = "W", measure.vars = c(49,52,53,55,56))
+
+levels(dat_melt_bin2$variable) <- c('diabetes', 'myocard. inf.', 'angina p.', 'stroke', 'cancer')
 
 g_disease <- ggplot(dat_melt_bin2, aes(x = factor(W), fill = factor(value))) +
   geom_bar(position = "fill") + facet_wrap(~variable, nrow = 1) +
@@ -220,7 +224,7 @@ grep('u3tmeddia',colnames(data)); grep('u3tmppi',colnames(data))
 
 dat_melt_bin3 = melt(data, id.vars = "W", measure.vars = 58:111)
 
-ggplot(dat_melt_bin3, aes(x = factor(W), fill = factor(value))) +
+g_medic <- ggplot(dat_melt_bin3, aes(x = factor(W), fill = factor(value))) +
   geom_bar(position = "fill") + facet_wrap(~variable, nrow = 10) +
   scale_fill_manual(name = "Medication", breaks = c(0,1,NA),
                     labels=c("No","Yes","NA"), values = c('darkgray','lightgray','purple'))  +
@@ -479,9 +483,11 @@ g_after <- grid.arrange(arrangeGrob(g_age, g_bmi, g_sex, g_alcohol, g_phys, g_sm
 grep('u3tsysmm', colnames(matched_df)); grep('u3lk_chola',colnames(matched_df)); grep('u3lk_tria',colnames(matched_df)) ## +2 cos no need of WHR
 dat_melt_cont_1_after = melt(matched_df, id.vars = "W", measure.vars = c(18:19,43:46))
 
-lvls = levels(as.factor(dat_melt_cont_1_after$variable))
 nacounts <- by(dat_melt_cont_1_after, as.factor(dat_melt_cont_1_after$variable), function(x) sum(is.na(x$value)))
-levels(dat_melt_cont_1_after$variable) = paste(lvls," (NA=",as.integer(nacounts),")",sep="")
+
+levels(dat_melt_cont_1_after$variable) <- c('sys. BP', 'dia. BP', 'cholesterol', 'HDL chol.', 'LDL chol.', 'triglyceride')
+lvls = levels(as.factor(dat_melt_cont_1_after$variable))
+# levels(dat_melt_cont_1_after$variable) = paste(lvls," (NA=",as.integer(nacounts),")",sep="")
 
 g_lab_after <- ggplot(dat_melt_cont_1_after, aes(x=value)) +
   geom_density(aes(group=factor(W), fill=factor(W)),
@@ -496,6 +502,8 @@ grep('u3tmi', colnames(matched_df)); grep('u3tca',colnames(matched_df))
 
 dat_melt_bin2_after = melt(matched_df, id.vars = "W", measure.vars = c(49,52,53,55,56))
 
+levels(dat_melt_bin2_after$variable) <- c('diabetes', 'myocard. inf.', 'angina p.', 'stroke', 'cancer')
+
 g_disease_after <- ggplot(dat_melt_bin2_after, aes(x = factor(W), fill = factor(value))) +
   geom_bar(position = "fill") + facet_wrap(~variable, nrow = 1) +
   scale_fill_manual(name = "Disease", breaks = c(0,1,NA),
@@ -509,7 +517,7 @@ g_after_other <- grid.arrange(arrangeGrob(g_lab, g_disease,
                               arrangeGrob(g_lab_after, g_disease_after,
                                           top="After Matching", nrow = 2), ncol = 2)
 
-# ggsave(file = 'plots_pipeline_microbiome/M25_balance_other.jpeg',
+# ggsave(file = 'plots_pipeline_microbiome/PM25_balance_other.jpeg',
 #        g_after_other,
 #        dpi=300,
 #        width = 300,
@@ -521,13 +529,26 @@ grep('u3tmeddia',colnames(matched_df)); grep('u3tmppi',colnames(matched_df))
 
 dat_melt_bin3_after = melt(matched_df, id.vars = "W", measure.vars = 58:111)
 
-ggplot(dat_melt_bin3_after, aes(x = factor(W), fill = factor(value))) +
+g_medic_after <- ggplot(dat_melt_bin3_after, aes(x = factor(W), fill = factor(value))) +
   geom_bar(position = "fill") + facet_wrap(~variable, nrow = 10) +
   scale_fill_manual(name = "Medication", breaks = c(0,1,NA),
                     labels=c("No","Yes","NA"), values = c('darkgray','lightgray','purple'))  +
   scale_x_discrete(name = "PM2.5", breaks = c(0,1), labels = c("High","Low")) + 
   theme(legend.position = "top", legend.key.size =  unit(0.1, "in"),
         axis.text.x = element_text(angle = 30, hjust = 1)) 
+
+g_after_medic <- grid.arrange(arrangeGrob(g_medic,
+                                          top="Before Matching"),
+                              arrangeGrob(g_medic_after,
+                                          top="After Matching"), ncol = 2)
+
+# ggsave(file = 'plots_pipeline_microbiome/PM25_balance_medic.jpeg',
+#        g_after_medic,
+#        dpi=300,
+#        width = 300,
+#        height = 300,
+#        units = "mm")
+
 
 ################
 # SAVE DATASET #

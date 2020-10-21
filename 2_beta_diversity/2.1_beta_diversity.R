@@ -5,6 +5,7 @@ library(plyr); packageVersion("plyr")
 library(MiRKAT)
 library(compositions)
 library(reshape2)
+library(RColorBrewer)
 
 ###############################################################################
 
@@ -15,13 +16,15 @@ setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE')
 ASV_table <- readRDS('data_pipeline_microbiome/dada2output/seqtab2020.rds')
 taxon_assign <- readRDS('data_pipeline_microbiome/dada2output/taxa2020.rds')
 # load phylogenetic information
-load("data_pipeline_microbiome/dada2output/phylotree2020.phy")
+load("data_pipeline_microbiome/dada2output/phylotree2020.RData")
 
 # load sample/matched_data
-load('data_pipeline_microbiome/dat_matched_PM25_bis.RData')
+# load('data_pipeline_microbiome/dat_matched_PM25_bis.RData')
+load('data_pipeline_microbiome/dat_matched_smoke_bis.RData')
 
 # load W matrix for randomization test
-load("data_pipeline_microbiome/W_paired_PM25.Rdata")
+# load("data_pipeline_microbiome/W_paired_PM25.Rdata")
+load("data_pipeline_microbiome/W_paired_smoke_bis.Rdata")
 
 ###############################################################################
 
@@ -53,7 +56,7 @@ ps_prune <- prune_taxa(vec_taxa > samp_perc, ps)
 ##### Global hypothesis testing #####
 #####################################
 
-## MiRKAT
+# ## MiRKAT
 u_unifrac <- UniFrac(ps_prune, weighted=FALSE, parallel=FALSE, fast=TRUE)
 unifrac_mat <- as.matrix(u_unifrac)
 # transform distance matrix to kernel
@@ -63,14 +66,14 @@ head(sample_data(ps_prune)$W)
 outcome <- as.numeric(sample_data(ps_prune)$W == 1)
 head(outcome)
 
-## testing using a single Kernel
- MiRKAT(y = outcome, X = NULL, Ks = K.unweighted_uni, out_type = "D", 
-                     method = "davies", returnKRV = TRUE, returnR2 = TRUE)
+# ## testing using a single Kernel
+# MiRKAT(y = outcome, X = NULL, Ks = K.unweighted_uni, out_type = "D", 
+#                      method = "davies", returnKRV = TRUE, returnR2 = TRUE)
 
 ## omnibus test if multiple distance matrices ("Optimal MiRKAT")
 
-ps_clr <- transform_sample_counts(ps_prune, function(x){x <- x + 0.5; clr(x)})
-ps_comp <- transform_sample_counts(ps_prune, function(x){x <- x + 0.5; x/sum(x)})
+ps_clr <- transform_sample_counts(ps_prune, function(x){x <- x + 1; clr(x)})
+ps_comp <- transform_sample_counts(ps_prune, function(x){x <- x + 1; x/sum(x)})
 
 # the available distance methods coded in distance
 dist_methods <- unlist(distanceMethodList)
@@ -80,9 +83,9 @@ print(dist_methods)
 euclidean_dist <- distance(ps_clr, method="euclidean")
 K.euclidean_dist <- D2K(as.matrix(euclidean_dist))
 
-# Bray
-bray_dist <- distance(ps_prune, method="bray") 
-K.bray_dist <- D2K(as.matrix(bray_dist))
+# # Bray
+# bray_dist <- distance(ps_prune, method="bray") 
+# K.bray_dist <- D2K(as.matrix(bray_dist))
 
 # Jaccard 
 jaccard_dist <- distance(ps_prune, method="jaccard", binary = TRUE) 
@@ -93,8 +96,7 @@ gower_dist <- distance(ps_clr, method="gower")
 K.gower_dist <- D2K(as.matrix(gower_dist))
 
 ## testing using a several Kernels
-Ks = list(u_unifrac = K.unweighted_uni, euclidean_dist = K.euclidean_dist, 
-          bray_dist = K.bray_dist, jaccard_dist = K.jaccard_dist, gower_dist = K.gower_dist)
+Ks = list(u_unifrac = K.unweighted_uni, euclidean_dist = K.euclidean_dist, jaccard_dist = K.jaccard_dist, gower_dist = K.gower_dist)
 MiRKAT_obs <- MiRKAT(y = outcome, Ks = Ks, X = NULL, out_type = "D", 
        method = "permutation", returnKRV = TRUE, returnR2 = TRUE)
 
@@ -133,6 +135,7 @@ Qs_obs = lapply(Ks, getQ, res, s2 = 1)
 
 
 #### TEST ####
+W_paired <- W_paired_smoke
 dim(W_paired)
 
 # set the number of randomizations
@@ -157,10 +160,14 @@ for(j in 1:nrep){
   t_arrays[j,] = unlist(Qs_new) ## not sure this is the statistic we want (KRV?)
 }
 
+## add the observed test stats
+t_arr <- rbind(unlist(Qs_obs), t_arrays)
+head(t_arr)
+
 ## calculate p_values
 p_values <- NULL
 for (p in 1:length(Ks)){
-  p_values[p] <- mean(t_arrays[,p] >= Qs_obs[p])
+  p_values[p] <- mean(t_arr[,p] >= Qs_obs[p])
 }
 p_values
 
@@ -168,16 +175,16 @@ MiRKAT_obs$p_values
 
 ## plot randomization distributions
 t_arrays_data_frame <- data.frame(t_arrays)
-colnames(t_arrays_data_frame) <- c("Unifrac", "Aitchison", "Bray", "Jaccard", "Gower")
+colnames(t_arrays_data_frame) <- c("Unifrac", "Aitchison", "Jaccard", "Gower")
 
 t_array_melt <- melt(t_arrays_data_frame)
-t_array_melt_plot <- t_array_melt[t_array_melt$variable != "Bray",]
+# t_array_melt_plot <- t_array_melt[t_array_melt$variable != "Bray",]
 
 dat_text_lab <- data.frame(variable = colnames(t_arrays_data_frame))
 dat_text_lab$obs_stat <- as.numeric(Qs_obs)
-dat_text_lab <- dat_text_lab[dat_text_lab$variable != "Bray",]
+# dat_text_lab <- dat_text_lab[dat_text_lab$variable != "Bray",]
 
-g_rand <- ggplot(t_array_melt_plot,aes(x = value)) +
+g_rand <- ggplot(t_array_melt,aes(x = value)) +
   facet_wrap(~variable, scales = "free") +
   geom_histogram(fill="white",colour="black") + 
   geom_vline(data = dat_text_lab, mapping = aes(xintercept = obs_stat), 
@@ -185,7 +192,7 @@ g_rand <- ggplot(t_array_melt_plot,aes(x = value)) +
   theme(axis.text.x = element_text(angle = -90, vjust = 0.5),
         panel.background = element_blank())
 
-# ggsave(file = 'plots_pipeline_microbiome/null_dist_beta.jpeg',
+# ggsave(file = 'plots_pipeline_microbiome/null_dist_beta_smoke.png',
 #        g_rand,
 #        dpi=300,
 #        width = 180,
@@ -205,7 +212,7 @@ dim(t_arrays)
 # AT STEP 4: consider at each rep. T_rep as T_obs to calculate nrep p-values 
 # for the hypothetical test statistics
 
-hyp_matrix <- t_arrays 
+hyp_matrix <- t_arr 
 hyp_p_value <- matrix(NA, ncol = dim(t_arrays)[2], nrow = nrep)
 
 # based on value (hyp_obs) of each row
@@ -214,7 +221,7 @@ for (r in 1:nrep){
     if(r%% ceiling(nrep/100) == 1)
       cat(paste0('Testing rep : ',r,'/',nrep,' \n\r'))
   # calc. hypothetical p_value on each column of the matrix 
-  hyp_p_value[r,] <- apply(t_arrays, 2, function(x) mean(x >= x[r]))
+  hyp_p_value[r,] <- apply(t_arr, 2, function(x) mean(x >= x[r]))
 }
 
 # for each rep. take the min. p_value
@@ -225,11 +232,13 @@ head(min_p_nrep)
 p_value_adj <- sapply(p_values, function(x) mean(min_p_nrep <= x))
 head(p_value_adj)
 
-col_vline <- c("red", "blue", "darkgreen", "orange")
-  
+col_vline <- brewer.pal(4, "Dark2")
+
+png("/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/padj_beta_smoke.png", width = 450, height = 350)
 hist(min_p_nrep, main = "", xlab = "min. p-value for 10,000 rep.")
-abline(v = p_values[-3], col = col_vline, lty = 3, lwd = 2)
-legend("topright", colnames(t_arrays_data_frame)[-3], text.col = col_vline)
+abline(v = p_values, col = col_vline, lty = 4, lwd = 1.5)
+legend("topright", colnames(t_arrays_data_frame), text.col = col_vline)
+dev.off()
 
 ###########################################
 ##### Low-dimensional representation ######
@@ -242,7 +251,7 @@ names(plist) = dist_methods
 for(i in dist_methods){
   print(i)
   # Calculate distance matrix
-  if(i %in% c("unifrac","bray","jaccard")){
+  if(i %in% c("unifrac","bray")){
   iDist <- distance(ps_prune, method=i)
   iMDS  <- ordinate(ps_prune, "MDS", distance=iDist)
   }else if(i %in% c("jaccard")){
@@ -268,16 +277,23 @@ for(i in dist_methods){
 
 df = ldply(plist, function(x) x$data)
 names(df)[1] <- "distance"
+
+df$distance[df$distance == "euclidean"] <- "aitchison"
+
 p = ggplot(df, aes(Axis.1, Axis.2, color=W))
 p = p + geom_point(size=1, alpha=0.5)
-p = p + facet_wrap(~distance, scales="free")
-p = p + ggtitle("MDS on various distance metrics")
+p = p + facet_wrap(~distance, scales="free") + 
+  scale_colour_manual(values = c("darkgreen","blue4"), 
+                      # limits=c("1","0"), name ="Smoking", labels = c("No","Yes")) 
+                      limits=c("1","0"), name ="Long-term PM2.5", labels = c("Low","High")) 
+p = p + ggtitle("MDS on various distance metrics") + 
+  theme(legend.position = "bottom", legend.key.size =  unit(0.1, "in"))
 p
 
-# ggsave(file = 'plots_pipeline_microbiome/iMDS_plots.jpeg',
+# ggsave(file = 'plots_pipeline_microbiome/iMDS_PM.png',
 #        p,
 #        dpi=300,
-#        width = 180,
+#        width = 150,
 #        height = 150,
 #        units = "mm")
 

@@ -11,13 +11,15 @@ ASV_table <- readRDS('dada2output/seqtab2020.rds')
 taxon_assign <- readRDS('dada2output/taxa2020.rds')
 
 # load sample/matched_data
-load('dat_matched_PM25_bis.RData')
+# load('dat_matched_PM25_bis.RData')
+load('dat_matched_smoke_bis.RData')
 
 # # load original dataset (try other Ws)
 # df <- read.csv('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/KORA\ DATA/Microbiome_data/KORA_microbiome_variables.csv')
 
 # load W matrix for randomization test
-load("W_paired_PM25.Rdata")
+# load("W_paired_PM25.Rdata")
+load("W_paired_smoke_bis.Rdata")
 
 # matched AP data
 sample_df <- matched_df[order(matched_df$ff4_prid),]
@@ -42,11 +44,11 @@ vec_taxa <- apply(otu_table(ps), 2, function(x) sum(x > 0, na.rm = TRUE))
 length(which(vec_taxa == 0))
 # 2. how many tax are obs. in at least x% of samples
 perc <- 0.10 # x%
-samp_perc <- trunc(dim(sample_df)[1]*perc)
-# samp_perc <- 0
+# samp_perc <- trunc(dim(sample_df)[1]*perc)
+samp_perc <- 0
 length(which(vec_taxa > samp_perc))
 
-# ps_prune <- prune_taxa(vec_taxa >= samp_perc, ps)
+ps_prune <- prune_taxa(vec_taxa > samp_perc, ps)
 
 # ## agglomerate to Species ##
 # ps_Species <- tax_glom(ps, taxrank = "Species", NArm = FALSE)
@@ -56,11 +58,14 @@ length(which(vec_taxa > samp_perc))
 # ps_Species
 
 ## agglomerate to Genus ##
-ps_Genus <- tax_glom(ps, taxrank = "Genus", NArm = FALSE)
+ps_Genus <- tax_glom(ps_prune, taxrank = "Genus", NArm = FALSE)
 vec_taxa_Gen <- apply(otu_table(ps_Genus), 2, function(x) sum(x > 0, na.rm = TRUE))
-length(which(vec_taxa_Gen > 2))
+table(vec_taxa_Gen)
 ps_Genus_prune <- prune_taxa(vec_taxa_Gen >= samp_perc, ps_Genus)
 ps_Genus_prune
+
+## agglomerate to Order ##
+ps_Order <- tax_glom(ps_prune, taxrank = "Order", NArm = FALSE)
 
 ps <- ps_Genus_prune
 
@@ -130,6 +135,7 @@ matrix_otu_bind <- rbind(clog_TX, clog_TY)
 dim(matrix_otu_bind)
 
 # set the number of randomizations
+W_paired <- W_paired_smoke
 nrep <- ncol(W_paired)/100
 
 Tarray = NULL
