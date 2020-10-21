@@ -483,11 +483,11 @@ g_after <- grid.arrange(arrangeGrob(g_age, g_bmi, g_sex, g_alcohol, g_phys, g_sm
 grep('u3tsysmm', colnames(matched_df)); grep('u3lk_chola',colnames(matched_df)); grep('u3lk_tria',colnames(matched_df)) ## +2 cos no need of WHR
 dat_melt_cont_1_after = melt(matched_df, id.vars = "W", measure.vars = c(18:19,43:46))
 
-nacounts <- by(dat_melt_cont_1_after, as.factor(dat_melt_cont_1_after$variable), function(x) sum(is.na(x$value)))
+# nacounts <- by(dat_melt_cont_1_after, as.factor(dat_melt_cont_1_after$variable), function(x) sum(is.na(x$value)))
+# lvls = levels(as.factor(dat_melt_cont_1_after$variable))
+# levels(dat_melt_cont_1_after$variable) = paste(lvls," (NA=",as.integer(nacounts),")",sep="")
 
 levels(dat_melt_cont_1_after$variable) <- c('sys. BP', 'dia. BP', 'cholesterol', 'HDL chol.', 'LDL chol.', 'triglyceride')
-lvls = levels(as.factor(dat_melt_cont_1_after$variable))
-# levels(dat_melt_cont_1_after$variable) = paste(lvls," (NA=",as.integer(nacounts),")",sep="")
 
 g_lab_after <- ggplot(dat_melt_cont_1_after, aes(x=value)) +
   geom_density(aes(group=factor(W), fill=factor(W)),
