@@ -77,38 +77,34 @@ names(shapeVec) <- names(phyl_ps_prune)
 
 plot_props <- plot(props_W, 
      layout = "spring",
-     sameLayout = TRUE, layoutGroup = 1, 
+     # layout = "layout_with_fr",
+     sameLayout = FALSE, layoutGroup = 2, 
      labels = FALSE,
-     # labelScale = TRUE,
-     # featVecCol = phyl_ps_prune,
      nodeColor = "colorVec",
      colorVec = phylcol_names,
-     nodeTransp = 20,
-     borderCol = "gray40", highlightHubs = FALSE, 
-     nodeSize = "clr", cexNodes = .5, 
-     # cexNodes = 1, 
-     # nodeSizeSpread = 3,
-     cexTitle = 2,
+     nodeTransp = 40,
+     borderCol = "lightgray", highlightHubs = FALSE, 
+     nodeSize = "clr", cexNodes = 1, 
+     cexTitle = 1,
      edgeTranspLow = 30, 
      edgeTranspHigh = 30,
-     # nodeShape = c("circle", "triangle","square","diamond"),
      nodeShape = c("circle", "triangle"),
      featVecShape = shapeVec,
      rmSingles = "inboth",
-     mar = c(6,5,3,2), groupNames = c("Polluted air", "Clean air"))
+     mar = c(6,5,3,2), groupNames = c("High PM2.5", "Low PM2.5"))
 legend("top", 
        inset = .05, title = "phylum:",
        legend=levels(phyl_ps_prune), ncol = 2,
        col=phylcol, pt.bg = phylcol, bty = "n", pch=16) 
 legend("bottom", 
-       inset = .13, 
+       inset = .2, 
        title = "weights:",
        legend=c("+","-"), lty = 1, lwd = 2,
        col=c("darkgreen","red"), bty="n", horiz = TRUE) 
 legend("bottom", 
-       inset = .19, 
+       inset = .28, 
        title = "differentially abundant:",
-       legend=c("Genus"), 
+       legend=c("Genera"), 
        pch = c(2,0,5), 
        bty="n", horiz = FALSE) 
 ```
@@ -121,7 +117,7 @@ summary(props_W)[[1]]
 ### Modularity (clusters/modules)
 
 ```{r}
-# summary(props_W)
+summary(props_W)
 ```
 
 
@@ -148,10 +144,10 @@ plot_cluster <- plot(props_W,
      nodeShape = c("circle", "triangle"),
      featVecShape = shapeVec,
      rmSingles = "inboth",
-     cexTitle = 2,
+     cexTitle = 1,
      edgeTranspLow = 30, 
      edgeTranspHigh = 30,
-     mar = c(6,5,3,2), groupNames = c("Polluted air", "Clean air"))
+     mar = c(6,5,3,2), groupNames = c("High PM2.5", "Low PM2.5"))
 legend("bottom", 
        inset = .11, 
        title = "weights:",
@@ -207,7 +203,7 @@ plot(g_sum, vertex.size = V(g_sum)$com_size/2, edge.width=E(g_sum)$weight/5,
      vertex.label.dist=5, vertex.label.degree = pi*V(g_sum)$type, 
      margin = -.2, asp = 2, edge.arrow.size=.7)
 
-legend(x=-2.5, y=-1.1, c("W = 0 (Polluted)", "W = 1 (Clean)"), pch=21,
+legend(x=-2.5, y=-1.1, c("W = 0 (High PM2.5)", "W = 1 (Low PM2.5)"), pch=21,
        col="#777777", pt.bg=c("#66B0FF","#1CFFCE"), pt.cex=2, cex=.8, bty="n", ncol=1)
 
 legend(x=.1, y=-1.1, legend=legend_cats$size_text, pt.cex=legend_cats$size_circle/11, bty="n", cex = .8,
@@ -230,9 +226,9 @@ labels_1[is.na(labels_1)] <- paste0("Order_", unname(tax_table(ps_Genus_prune)[i
 labels_1 <- as.character(labels_1)
 names(labels_1) <- rownames(tax_table(ps_Genus_prune)[, 'Genus'])
 
-plot(props_W, 
+p_zoom <- plot(props_W, 
      # sameLayout = TRUE, layoutGroup = 2, 
-     repulsion = .8,
+     repulsion = .6,
      # charToRm = "Seq",
      labels = labels_1[names_clust],
      labelFont = 1, 
@@ -240,18 +236,18 @@ plot(props_W,
      labelScale = FALSE,
      # featVecCol = phyl_ps_prune[names_clust],
      nodeColor = "colorVec",
-     colorVec = list(phylcol_names[names_clust],
-                  phylcol_names[names_clust]),
+     colorVec = phylcol_names,
      sameClustCol = FALSE,
-     borderCol = "gray40", highlightHubs = FALSE,
-     nodeSize = "clr", cexNodes = 1.5, 
+     borderCol = "lightgrey", highlightHubs = FALSE,
+     nodeSize = "clr", cexNodes = 1, 
      nodeTransp = 40,
      nodeFilter = "names",
      nodeShape = c("circle", "triangle"),
      featVecShape = shapeVec[names_clust],
      nodeFilterPar = names_clust,
      edgeTranspLow = 30, edgeTranspHigh = 30,
-     groupNames = c("Polluted air", "Clean air"))
+     edgeWidth = .5,
+     groupNames = c("High PM2.5", "Low PM2.5"))
 ```
 
 ```{r}
