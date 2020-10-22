@@ -211,7 +211,7 @@ legend(x=.1, y=-1.1, legend=legend_cats$size_text, pt.cex=legend_cats$size_circl
        title = "Module size (nb. of nodes):")
 ```
 
-#### Big modules structure
+#### Zoom connected component
 
 ```{r, fig.height=8, fig.width=15}
 names_clust <- as.character(c(names(props_W$clustering$clust1)[which(props_W$clustering$clust1 %in% c(3))],

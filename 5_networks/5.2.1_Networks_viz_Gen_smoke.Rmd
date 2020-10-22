@@ -107,44 +107,35 @@ names(shapeVec) <- names(phyl_ps_prune)
 
 plot_props <- plot(props_W, 
      layout = "spring",
-     sameLayout = TRUE, layoutGroup = 1, 
+     # sameLayout = TRUE, layoutGroup = 1, 
      labels = FALSE,
-     # labelScale = TRUE,
-     # featVecCol = phyl_ps_prune,
      nodeColor = "colorVec",
      colorVec = phylcol_names,
-     nodeTransp = 20,
-     borderCol = "gray40", highlightHubs = FALSE, 
-     nodeSize = "clr", cexNodes = .5, 
-     # cexNodes = 1, 
-     # nodeSizeSpread = 3,
-     cexTitle = 2,
+     nodeTransp = 40,
+     borderCol = "lightgray", highlightHubs = FALSE, 
+     nodeSize = "clr", cexNodes = 1, 
+     cexTitle = 1,
      edgeTranspLow = 30, 
      edgeTranspHigh = 30,
-     # nodeShape = c("circle", "triangle","square","diamond"),
      nodeShape = c("circle", "triangle"),
      featVecShape = shapeVec,
      rmSingles = "inboth",
      mar = c(6,5,3,2), groupNames = c("Smoking", "Non-smoking"))
 legend("top", 
-       inset = .05, title = "phylum:",
+       inset = .04, title = "phylum:",
        legend=levels(phyl_ps_prune), ncol = 2,
        col=phylcol, pt.bg = phylcol, bty = "n", pch=16) 
 legend("bottom", 
-       inset = .13, 
+       inset = .2, 
        title = "weights:",
        legend=c("+","-"), lty = 1, lwd = 2,
        col=c("darkgreen","red"), bty="n", horiz = TRUE) 
 legend("bottom", 
-       inset = .19, 
+       inset = .28, 
        title = "differentially abundant:",
        legend=c("Genus"), 
        pch = c(2,0,5), 
        bty="n", horiz = FALSE) 
-legend("bottom", 
-       inset = .1,
-       legend = "node size: median raw counts",
-       bty="n", horiz = TRUE) 
 ```
 
 ## Network properties
@@ -257,23 +248,7 @@ legend(x=.1, y=-1.1, legend=legend_cats$size_text, pt.cex=legend_cats$size_circl
        title = "Module size (nb. of nodes):")
 ```
 
-### Module 1 split (non-smoking)
-
-```{r, echo = FALSE, include=FALSE}
-names_clust <- as.character(c(names(props_W$clustering$clust1)[which(props_W$clustering$clust1 %in% c(1,2))],
-                            names(props_W$clustering$clust2)[which(props_W$clustering$clust2 %in% c(1,2))]))
-names_clust <- unique(names_clust)
-# col_module <- unique(plot_cluster$nodecolor$nodecol1[names_clust],
-#                      plot_cluster$nodecolor$nodecol2[names_clust])
-
-plot_zoom <- plot(props_W, 
-     # sameLayout = TRUE, layoutGroup = 2, 
-     featVecCol = phyl_ps_prune[names_clust],
-     shortenLabels = "none",
-     nodeColor = "feature",
-     nodeFilter = "names",
-     nodeFilterPar = names_clust)
-```
+### Zoom connected component
 
 ```{r, echo = FALSE}
 # load("/Users/alicesommer/Desktop/DACOMP_cluster/results/PM_connect_seq.RData")
@@ -286,6 +261,10 @@ plot_zoom <- plot(props_W,
 ```
 
 ```{r, fig.height=8, fig.width=15}
+names_clust <- as.character(c(names(props_W$clustering$clust1)[which(props_W$clustering$clust1 %in% c(1,2))],
+                            names(props_W$clustering$clust2)[which(props_W$clustering$clust2 %in% c(1,2))]))
+names_clust <- unique(names_clust)
+
 labels_1 <- as.factor(tax_table(ps_Genus_prune)[, 'Genus'])
 names(labels_1) <- rownames(tax_table(ps_Genus_prune)[, 'Genus'])
 
@@ -294,29 +273,26 @@ labels_1[is.na(labels_1)] <- paste0("Order_", unname(tax_table(ps_Genus_prune)[i
 labels_1 <- as.character(labels_1)
 names(labels_1) <- rownames(tax_table(ps_Genus_prune)[, 'Genus'])
 
-order_labels <- plot_zoom$labels$labels1 ## save the ordered labels and then replug in figure above 
-
 plot(props_W, 
      # sameLayout = TRUE, layoutGroup = 2, 
-     repulsion = .8,
+     repulsion = .7,
      # charToRm = "Seq",
      labels = labels_1[names_clust],
      labelFont = 1, 
      cexLabels = .7,
      labelScale = FALSE,
      featVecCol = phyl_ps_prune[names_clust],
-     # nodeColor = "feature",
      nodeColor = "colorVec",
-     colorVec = list(phylcol_names[names_clust],
-                  phylcol_names[names_clust]),
-     sameClustCol = FALSE,
-     borderCol = "gray40", highlightHubs = FALSE,
-     nodeSize = "clr", cexNodes = 1.5, nodeTransp = 40,
+     colorVec = phylcol_names[names_clust],
+     borderCol = "lightgray", highlightHubs = FALSE,
+     nodeSize = "clr", cexNodes = 1, 
+     nodeTransp = 40,
      nodeFilter = "names",
      nodeShape = c("circle", "triangle"),
      featVecShape = shapeVec[names_clust],
      nodeFilterPar = names_clust,
      edgeTranspLow = 30, edgeTranspHigh = 30,
+     edgeWidth = .5,
      groupNames = c("Smoking", "Non-smoking"))
 ```
 
