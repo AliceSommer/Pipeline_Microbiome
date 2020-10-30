@@ -298,10 +298,10 @@ p
 #        units = "mm")
 
 # dig into unifrac for smoking
-sample_data(ps_prune)$seq_depth <- apply(otu_table(ps_prune), 1, function(x) sum(x, na.rm = TRUE))
-
 iDist <- distance(ps_prune, method='unifrac')
 iMDS  <- ordinate(ps_prune, "MDS", distance=iDist)
+
+sample_data(ps_prune)$seq_depth <- apply(otu_table(ps_prune), 1, function(x) sum(x, na.rm = TRUE))
 plot_ordination(ps_prune, iMDS, color="seq_depth") +
   scale_color_continuous(low = "lightgrey", high = "black")
 
