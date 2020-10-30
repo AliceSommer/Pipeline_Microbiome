@@ -10,7 +10,7 @@ rank_names <- c( "ASV" , "Species" , "Genus"  , "Family" , "Order"  , "Class"  ,
 # SMOKING #
 ###########
 
-load('dacomp_results/dacomp_results_smoke.RData')
+load('dacomp_results/dacomp_results_PM.RData')
 
 for (d in 1:7){
   condition <- dacomp_results$p_value_adj[dacomp_results$rank == rank_names[d]] <= 0.2
@@ -50,12 +50,24 @@ tree_smoke <- ggtree(ps_smoke_tree, color = 'grey',
 
 # for PM change sclae for phylum
 phylcol <- c(brewer.pal(9, "Set1")[1:7], brewer.pal(9, "Greens")[4], brewer.pal(9, "Set1")[8:9])
-                     
+
+
+tip_effect$tip_size <- NA
+tip_effect$tip_size[tip_effect$p_value_adj < .1] <- 6
+tip_effect$tip_size[tip_effect$p_value_adj >= .1] <- 5
+tip_effect$tip_size[tip_effect$p_value_adj >= .2] <- 4
+tip_effect$tip_size[tip_effect$p_value_adj >= .3] <- 3
+tip_effect$tip_size[tip_effect$p_value_adj >= .4] <- 2
+tip_effect$tip_size[tip_effect$p_value_adj >= .5] <- 1
+
 tree_smoke_effect <- tree_smoke %<+% tip_effect +
                     # scale_color_brewer(palette = "Set1") +
                     scale_color_manual(values = phylcol) +
-                    geom_tippoint(aes(color=Phylum, size = p_value_adj), alpha=0.7) +
-                    scale_size(name = "p-value adj.", trans = 'reverse', breaks = c(0.2,0.9)) +
+                    geom_tippoint(aes(color=Phylum, size = tip_size), alpha=0.7) +
+                    # scale_size(name = "p-value adj.") +
+                    scale_size(name = "p-value adj.", 
+                                labels = c('>= .5', '< .5', '< .4', 
+                                           '< .3', '< .2', '< .1') ) +
                       # aes(color=Phylum)
                       # scale_color_viridis_d()
                     geom_tiplab(aes(label = tip_labels, color = Phylum), size = 3, offset = 2) +

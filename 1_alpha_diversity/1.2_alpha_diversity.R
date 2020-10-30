@@ -80,6 +80,9 @@ ggplot(sample_data(ps_prune), aes(x = dim)) +
 ## SHANNON ##
 #############
 
+# code run on cluster (computationally intensive)
+# load('/Users/alicesommer/Desktop/DivNet_cluster/ps_DivNet_smoke.RData')
+
 g_PM <- ggplot(sample_data(ps_prune), aes(color = factor(W), y = DivNet_W)) +
   geom_boxplot(alpha = .5) + ylab('DivNet shannon index') +
   scale_x_discrete(name = "") +
@@ -87,12 +90,13 @@ g_PM <- ggplot(sample_data(ps_prune), aes(color = factor(W), y = DivNet_W)) +
   scale_colour_manual(values = c("darkgreen","blue4"), limits=c("1","0"), name ="Smoking", labels = c("No","Yes")) +
   theme(legend.position = "top", legend.key.size =  unit(0.1, "in")) +
   guides(color=guide_legend(nrow=2,byrow=TRUE))  + 
-  annotate(geom="text",x=.7, y=1.7, label="stat. = 0.1037") +
-  annotate(geom="text",x=.7, y=1.8, label="p-value = 0.0388") 
+  annotate(geom="text",x=.7, y=1.7, label="stat. = 0.0588") +
+  annotate(geom="text",x=.7, y=1.8, label="p-value = 0.0497") 
 
 # PM: p-value = 0.0388; test-statistic = 0.1036517 
+# AP: p-value = 0.0497; test-statistic = 0.0588
 
-# ggsave(g_PM, file = "/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/box_shan_PM.png",
+# ggsave(g_PM, file = "/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/box_shan_smoke.png",
 #        dpi=300,
 #        width = 85,
 #        height = 120,
@@ -142,14 +146,18 @@ for(i in 1:nrep){
   t_array[i] = reg$table[2,1] 
 }
 
+# code run on cluster (computationally intensive)
+# load('/Users/alicesommer/Desktop/DivNet_cluster/test_stat_DivNet.RData')
+
 ## calculate p_value
+# p_value <- mean(t_array >= t_array[1])
 p_value <- mean(t_array >= estim_obs)
 p_value
 
 # 1. Open png file
-png("/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/beta_shan_PM.png", width = 350, height = 350)
+png("/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/beta_shan_smoke.png", width = 350, height = 350)
 # 2. Create the plot
-hist(t_array, breaks = 30, main = "", xlab = "shannon beta (PM2.5)")
+hist(t_array, breaks = 30, main = "", xlab = "shannon beta (Smoking)")
 abline(v = estim_obs, col = 'red', lwd = 2, lty = 2)
 # 3. Close the file
 dev.off()

@@ -297,6 +297,28 @@ p
 #        height = 150,
 #        units = "mm")
 
+# dig into unifrac for smoking
+sample_data(ps_prune)$seq_depth <- apply(otu_table(ps_prune), 1, function(x) sum(x, na.rm = TRUE))
+
+iDist <- distance(ps_prune, method='unifrac')
+iMDS  <- ordinate(ps_prune, "MDS", distance=iDist)
+plot_ordination(ps_prune, iMDS, color="seq_depth") +
+  scale_color_continuous(low = "lightgrey", high = "black")
+
+sample_data(ps_prune)$u3csex <- as.factor(sample_data(ps_prune)$u3csex)
+plot_ordination(ps_prune, iMDS, color="u3csex")
+
+plot_ordination(ps_prune, iMDS, color="u3tbmi") +
+  scale_color_continuous(low = "lightgrey", high = "black")
+
+plot_ordination(ps_prune, iMDS, color="u3talteru") +
+  scale_color_continuous(low = "lightgrey", high = "black")
+
+sample_data(ps_prune)$u3tdiabet <- as.factor(sample_data(ps_prune)$u3tdiabet)
+plot_ordination(ps_prune, iMDS, color="u3tdiabet") 
+
+sample_data(ps_prune)$u3tortgc <- as.factor(sample_data(ps_prune)$u3tortgc)
+plot_ordination(ps_prune, iMDS, color="u3tortgc") 
 
 # ###################################################################################################
 # #### maybe interesting for microbiome -> AP -> diabetes ####
