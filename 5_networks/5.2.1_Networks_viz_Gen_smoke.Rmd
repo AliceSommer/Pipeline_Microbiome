@@ -274,7 +274,7 @@ labels_1 <- as.character(labels_1)
 names(labels_1) <- rownames(tax_table(ps_Genus_prune)[, 'Genus'])
 
 plot(props_W, 
-     # sameLayout = TRUE, layoutGroup = 2, 
+     # sameLayout = TRUE, layoutGroup = 1, 
      repulsion = .7,
      # charToRm = "Seq",
      labels = labels_1[names_clust],
