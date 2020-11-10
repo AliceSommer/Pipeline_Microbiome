@@ -54,35 +54,32 @@ load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/ps_to
 load('/Users/alicesommer/Desktop/NetCoMi_cluster/props_W_Gen_smoke_Oct.RData')
 ```
 
-```{r, echo=FALSE}
-# load("/Users/alicesommer/Desktop/DACOMP_cluster/results/ratio_matrix_test_save3.RData")
-# # check sequence names differentially abundant
-# diff_node_names <- rownames(tax_table(ps_Genus_prune)[!is.na(ratio_matrix_test_save[1,]),])
-# length(diff_node_names)
-```
-
-```{r, echo=FALSE}
-# row_sum_1 <- apply(props_W$input$normCounts1, 1,sum)
-# row_sum_2 <- apply(props_W$input$normCounts2, 1,sum)
-# norm_counts_1 <- clr(props_W$input$normCounts1 + .5)
-# norm_counts_2 <- clr(props_W$input$normCounts2 + .5)
-# 
-# norm_counts_1[props_W$input$normCounts1 == 0] <- 0
-# norm_counts_2[props_W$input$normCounts2 == 0] <- 0
-# 
-# props_W$input$normCounts1 <- norm_counts_1
-# props_W$input$normCounts2 <- norm_counts_2
-```
-
 ```{r}
 load('/Users/alicesommer/Desktop/DACOMP_cluster/dacomp_results/dacomp_results_smoke.RData')
 condition <- dacomp_results$p_value_adj[dacomp_results$rank == "Genus"] <= 0.2
 ```
 
+```{r}
+# layout union of networks
+graph1 <- graph_from_adjacency_matrix(props_W$input$adjaMat1, weighted = TRUE)
+graph2 <- graph_from_adjacency_matrix(props_W$input$adjaMat2, weighted = TRUE)
 
-We plot the results of the netAnalyze function.
+graph_u <- union(graph1, graph2)
+### weight
+E(graph_u)$weight <- pmin(E(graph_u)$weight_1, E(graph_u)$weight_2, na.rm = TRUE) # element-wise min. 
+graph_u <- delete_edge_attr(graph_u, "weight_1")
+graph_u <- delete_edge_attr(graph_u, "weight_2")
 
-```{r, echo=TRUE, fig.height=9, fig.width=16}
+set.seed(40)
+layout_fr <- layout_with_fr(graph_u, weights = E(graph_u)$weight)
+# layout_fr <- layout.forceatlas2(graph_u, iterations=500, plotstep=500,
+#                                 gravity = .5, k = 800)
+
+plot_net_u <- props_W
+plot_net_u$input$adjaMat1 <- as_adjacency_matrix(graph_u, attr="weight", sparse = FALSE)
+```
+
+```{r, echo=FALSE, fig.height=9, fig.width=16}
 phyl_ps_prune <- as.factor(tax_table(ps_Genus_prune)[, 'Phylum'])
 names(phyl_ps_prune) <- rownames(tax_table(ps_Genus_prune)[, 'Phylum'])
 # phylcol <- rainbow(length(unique(phyl_ps_prune)))
@@ -97,17 +94,17 @@ names(phylcol_names) <- rownames(tax_table(ps_Genus_prune)[, 'Phylum'])
 # Genus level diff ab
 # 24  40  53 105
 
-
 shapeVec <- rep(1, ncol(otu_table(ps_Genus_prune)))
 shapeVec[which(condition)] <- 2
 #shapeVec[c(28,  50,  77,  87,  90, 99, 110, 128, 131)] <- 3
 #shapeVec[c(70, 112)] <- 4
 names(shapeVec) <- names(phyl_ps_prune)
 
+rownames(layout_fr) <- names(phyl_ps_prune)
 
-plot_props <- plot(props_W, 
-     layout = "spring",
-     # sameLayout = TRUE, layoutGroup = 1, 
+# plot union graph
+plot(plot_net_u, 
+     layout = layout_fr,
      labels = FALSE,
      nodeColor = "colorVec",
      colorVec = phylcol_names,
@@ -119,7 +116,27 @@ plot_props <- plot(props_W,
      edgeTranspHigh = 30,
      nodeShape = c("circle", "triangle"),
      featVecShape = shapeVec,
-     rmSingles = "inboth",
+     mar = c(6,5,3,2), groupNames = c("Union (Smoking/N-Smoking) graph", "N-Smoking"))
+```
+
+We plot the results of the netAnalyze function.
+
+```{r, echo=TRUE, fig.height=9, fig.width=16}
+plot_props <- plot(props_W, 
+     layout = layout_fr,
+     # sameLayout = TRUE, layoutGroup = 1, 
+     labels = FALSE,
+     nodeColor = "colorVec",
+     colorVec = phylcol_names,
+     nodeTransp = 40,
+     borderCol = "lightgray", highlightHubs = FALSE, 
+     nodeSize = "clr", cexNodes = 1, 
+     cexTitle = 2,
+     edgeTranspLow = 30, 
+     edgeTranspHigh = 30,
+     nodeShape = c("circle", "triangle"),
+     featVecShape = shapeVec,
+     # rmSingles = "inboth",
      mar = c(6,5,3,2), groupNames = c("Smoking", "Non-smoking"))
 legend("top", 
        inset = .04, title = "phylum:",
@@ -143,12 +160,6 @@ legend("bottom",
 ```{r}
 summary(props_W)[[1]]
 ```
-### Modularity (clusters/modules)
-
-```{r}
-summary(props_W)[[2]]
-```
-
 
 #### Vizualisation
 
@@ -161,8 +172,7 @@ col <- sample(polychrome(nclust))
 
 set.seed(1)
 plot_cluster <- plot(props_W,
-     # layout = FA_coord,
-     layout = "spring",
+     layout = layout_fr,
      # sameLayout = TRUE, layoutGroup = 1, 
      labels = FALSE, 
      labelFont = 1, cexLabels = 2,
@@ -176,7 +186,7 @@ plot_cluster <- plot(props_W,
      # nodeShape = c("circle", "triangle", "square","diamond"),
      nodeShape = c("circle", "triangle"),
      featVecShape = shapeVec,
-     rmSingles = "inboth",
+     # rmSingles = "inboth",
      cexTitle = 2,
      edgeTranspLow = 30, 
      edgeTranspHigh = 30,
@@ -275,11 +285,11 @@ names(labels_1) <- rownames(tax_table(ps_Genus_prune)[, 'Genus'])
 
 plot(props_W, 
      # sameLayout = TRUE, layoutGroup = 1, 
-     repulsion = .7,
-     # charToRm = "Seq",
+     layout = layout_fr[rownames(layout_fr) %in% names_clust,], 
+     # repulsion = .6,
      labels = labels_1[names_clust],
      labelFont = 1, 
-     cexLabels = .7,
+     cexLabels = 1.5,
      labelScale = FALSE,
      featVecCol = phyl_ps_prune[names_clust],
      nodeColor = "colorVec",
@@ -292,7 +302,7 @@ plot(props_W,
      featVecShape = shapeVec[names_clust],
      nodeFilterPar = names_clust,
      edgeTranspLow = 30, edgeTranspHigh = 30,
-     edgeWidth = .5,
+     edgeWidth = .5, cexTitle = 2,
      groupNames = c("Smoking", "Non-smoking"))
 ```
 
