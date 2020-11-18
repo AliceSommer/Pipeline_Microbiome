@@ -138,7 +138,9 @@ dim(matrix_otu_bind)
 W_paired <- W_paired_smoke
 nrep <- ncol(W_paired)/100
 
-Tarray = NULL
+# create vector to be save 
+# first is the obs. test stat
+Tarray = clr_x_stat
 
 for (i in 1:nrep){
   W_suffle <- W_paired[,i]
