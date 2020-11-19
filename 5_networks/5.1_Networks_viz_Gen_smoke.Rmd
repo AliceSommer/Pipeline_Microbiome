@@ -21,6 +21,7 @@ library(ForceAtlas2)
 library(pals)
 library(RColorBrewer)
 library(corrplot)
+library(tidyverse)
 ```
 
 ## Networks comparison
@@ -43,15 +44,15 @@ The following code was run on a cluster.
 #                           normMethod = "none", zeroMethod = "none",
 #                           sparsMethod = "none", seed = 123456, matchDesign = c(1,1))
 
-# load('/Users/alicesommer/Desktop/NetCoMi_cluster/net_W_output_Gen_smoke_Oct.RData')
+
 # props_W <- netAnalyze(net_W, clustMethod = "cluster_fast_greedy", connectivity = FALSE)
-## get errorn !!!!: Error in if (nrow(adjmatrix) != ncol(adjmatrix)) { : argument is of length zero
 ```
 
 ```{r, echo=FALSE}
 load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/ps_to_net_Gen_smoke.RData')
-# load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/props_W_Gen_smoke.RData')
-load('/Users/alicesommer/Desktop/NetCoMi_cluster/props_W_Gen_smoke_Oct.RData')
+load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/net_W_output_Gen_smoke_Oct.RData')
+load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/props_W_Gen_smoke_Oct.RData')
+load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/diff_net_Gen_smoke.RData')
 ```
 
 ```{r}
@@ -260,19 +261,10 @@ legend(x=.1, y=-1.1, legend=legend_cats$size_text, pt.cex=legend_cats$size_circl
 
 ### Zoom connected component
 
-```{r, echo = FALSE}
-# load("/Users/alicesommer/Desktop/DACOMP_cluster/results/PM_connect_seq.RData")
-# sum(names_clust_PM %in% names_clust)
-# overlap_seq <- names_clust[which(names_clust_PM %in% names_clust)]
-# overlap_seq
-# 
-# props_W$clustering$clust1[overlap_seq]
-# props_W$clustering$clust2[overlap_seq]
-```
 
 ```{r, fig.height=8, fig.width=15}
 names_clust <- as.character(c(names(props_W$clustering$clust1)[which(props_W$clustering$clust1 %in% c(1,2))],
-                            names(props_W$clustering$clust2)[which(props_W$clustering$clust2 %in% c(1,2))]))
+                            names(props_W$clustering$clust2)[which(props_W$clustering$clust2 %in% c(1,2,4))]))
 names_clust <- unique(names_clust)
 
 labels_1 <- as.factor(tax_table(ps_Genus_prune)[, 'Genus'])
@@ -305,6 +297,46 @@ plot(props_W,
      edgeWidth = .5, cexTitle = 2,
      groupNames = c("Smoking", "Non-smoking"))
 ```
+### Diffnet results
+
+```{r, fig.height=8, fig.width=15}
+seq_to_seq <- names(diff_net$pvalsVec) 
+diff_ass <- seq_to_seq[which(diff_net$pvalsVec < 0.005)]
+diff_ass
+p_val <- diff_net$pvalsVec[which(diff_net$pvalsVec < 0.005)]
+
+diff_ass_split <- str_split(diff_ass, "_")
+
+for(i in 1:length(diff_ass_split)){
+  print(paste('p-value:',p_val[i]))
+  # print(diff_ass_split[[i]])
+  print(tax_table(ps_Genus_prune)[diff_ass_split[[i]],c("Order","Genus")])
+}
+
+plot(props_W, 
+     # sameLayout = TRUE, layoutGroup = 1, 
+     layout = layout_fr[rownames(layout_fr) %in% names_clust,], 
+     # repulsion = .6,
+     labels = labels_1[names_clust],
+     labelFont = 1, 
+     cexLabels = 1.5,
+     labelScale = FALSE,
+     featVecCol = phyl_ps_prune[names_clust],
+     nodeColor = "colorVec",
+     colorVec = phylcol_names[names_clust],
+     borderCol = "lightgray", highlightHubs = FALSE,
+     nodeSize = "clr", cexNodes = 1, 
+     nodeTransp = 40,
+     nodeFilter = "names",
+     nodeShape = c("circle", "triangle"),
+     featVecShape = shapeVec[names_clust],
+     nodeFilterPar = names_clust,
+     edgeTranspLow = 30, edgeTranspHigh = 30,
+     edgeWidth = .5, cexTitle = 2,
+     groupNames = c("Smoking", "Non-smoking"))
+```
+
+
 
 ### Correlation structure (non-smoking)
 
