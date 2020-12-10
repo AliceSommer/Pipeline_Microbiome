@@ -7,27 +7,32 @@ library(compositions)
 library(reshape2)
 library(RColorBrewer)
 
-###############################################################################
+#############
+# load data #
+#############
 
-# set working directory
-setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE')
+## set working directory
+setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome')
 
-# load microbiome data
-ASV_table <- readRDS('data_pipeline_microbiome/dada2output/seqtab2020.rds')
-taxon_assign <- readRDS('data_pipeline_microbiome/dada2output/taxa2020.rds')
-# load phylogenetic information
-load("data_pipeline_microbiome/dada2output/phylotree2020.RData")
+## load microbiome data
+ASV_table <- readRDS('dada2output/seqtab2020.rds')
+taxon_assign <- readRDS('dada2output/taxa2020.rds')
+## load phylogenetic information
+load("dada2output/phylotree2020.RData")
 
-# load sample/matched_data
-# load('data_pipeline_microbiome/dat_matched_PM25_bis.RData')
-load('data_pipeline_microbiome/dat_matched_smoke_bis.RData')
+## load sample/matched_data
+load('dat_matched_PM25_bis.RData')
+# load('dat_matched_smoke_bis.RData')
 
-# load W matrix for randomization test
-# load("data_pipeline_microbiome/W_paired_PM25.Rdata")
-load("data_pipeline_microbiome/W_paired_smoke_bis.Rdata")
+## load W matrix for randomization test
+load("W_paired_PM25.Rdata")
+# load("W_paired_smoke_bis.Rdata")
 
-###############################################################################
+############################
+# create a phyloseq object # 
+############################
 
+## order covariates data frame
 sample_df <- matched_df[order(matched_df$ff4_prid),]
 sample_df$W <- as.factor(sample_df$W)
 samples.out <- as.character(sample_df$ff4_prid)
@@ -40,23 +45,17 @@ ps <- phyloseq(otu_table(ASV_table, taxa_are_rows=FALSE),
                phy_tree(tGTR$tree))
 ps
 
-# locate the species that are totally absent in the matched data 
-# 1. have a vector of nr. of observed samples per taxa
-vec_taxa <- apply(otu_table(ps), 2, function(x) sum(x > 0, na.rm = TRUE))
-length(which(vec_taxa == 0))
-# 2. how many tax are obs. in at least x% of samples
-perc <- 0.05 # x%
-# samp_perc <- trunc(dim(sample_df)[1]*perc)
-samp_perc <- 0
-length(which(vec_taxa > samp_perc))
+## locate the species that are totally absent in the matched data
+empty_species <- colSums(otu_table(ps))
+length(which(empty_species == 0))
+# remove them
+ps_prune <- prune_taxa(empty_species != 0, ps)
 
-ps_prune <- prune_taxa(vec_taxa > samp_perc, ps)
+##################
+### 1. MiRKAT ###
+#################
 
-#####################################
-##### Global hypothesis testing #####
-#####################################
-
-# ## MiRKAT
+## MiRKAT
 u_unifrac <- UniFrac(ps_prune, weighted=FALSE, parallel=FALSE, fast=TRUE)
 unifrac_mat <- as.matrix(u_unifrac)
 # transform distance matrix to kernel
@@ -72,6 +71,7 @@ head(outcome)
 
 ## omnibus test if multiple distance matrices ("Optimal MiRKAT")
 
+## tranform the data
 ps_clr <- transform_sample_counts(ps_prune, function(x){x <- x + 1; clr(x)})
 ps_comp <- transform_sample_counts(ps_prune, function(x){x <- x + 1; x/sum(x)})
 
@@ -100,9 +100,9 @@ Ks = list(u_unifrac = K.unweighted_uni, euclidean_dist = K.euclidean_dist, jacca
 MiRKAT_obs <- MiRKAT(y = outcome, Ks = Ks, X = NULL, out_type = "D", 
        method = "permutation", returnKRV = TRUE, returnR2 = TRUE)
 
-#####################################
-### PERFORM A RANDOMIZATION TEST ###
-####################################
+#######################################
+### 2. PERFORM A RANDOMIZATION TEST ###
+######################################
 
 #### ADAPT MiRKAT to get Q-stat ####
 y = outcome; Ks = Ks; X = NULL; family = "binomial"
@@ -133,8 +133,7 @@ getQ = function(K, res, s2){
 
 Qs_obs = lapply(Ks, getQ, res, s2 = 1)
 
-
-#### TEST ####
+## W matrix
 W_paired <- W_paired_smoke
 dim(W_paired)
 
@@ -199,9 +198,9 @@ g_rand <- ggplot(t_array_melt,aes(x = value)) +
 #        height = 150,
 #        units = "mm")
 
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Multiple comparison adjustment 
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+##########################################
+### 3. MULTIPLE COMPARISON ADJUSTMENT ####
+##########################################
 verbose = T
 ### Lee, Forastiere, Miratix, Pillai (2017) method  for multiple comparison adjustment ### 
 
@@ -297,90 +296,4 @@ p
 #        height = 150,
 #        units = "mm")
 
-# dig into unifrac for smoking
-iDist <- distance(ps_prune, method='unifrac')
-iMDS  <- ordinate(ps_prune, "MDS", distance=iDist)
 
-sample_data(ps_prune)$seq_depth <- apply(otu_table(ps_prune), 1, function(x) sum(x, na.rm = TRUE))
-plot_ordination(ps_prune, iMDS, color="seq_depth") +
-  scale_color_continuous(low = "lightgrey", high = "black")
-
-sample_data(ps_prune)$u3csex <- as.factor(sample_data(ps_prune)$u3csex)
-plot_ordination(ps_prune, iMDS, color="u3csex")
-
-plot_ordination(ps_prune, iMDS, color="u3tbmi") +
-  scale_color_continuous(low = "lightgrey", high = "black")
-
-plot_ordination(ps_prune, iMDS, color="u3talteru") +
-  scale_color_continuous(low = "lightgrey", high = "black")
-
-sample_data(ps_prune)$u3tdiabet <- as.factor(sample_data(ps_prune)$u3tdiabet)
-plot_ordination(ps_prune, iMDS, color="u3tdiabet") 
-
-sample_data(ps_prune)$u3tortgc <- as.factor(sample_data(ps_prune)$u3tortgc)
-plot_ordination(ps_prune, iMDS, color="u3tortgc") 
-
-# ###################################################################################################
-# #### maybe interesting for microbiome -> AP -> diabetes ####
-# library(pldist)
-# 
-# ###########################################
-# ##### Calculate distances with pldist #####
-# ###########################################
-# 
-# # Input: Notice that row names are sample IDs 
-# paired.otus <- as(otu_table(ps_prune), "matrix") 
-# paired.otus[1:4,1:4]
-# 
-# paired.meta <- sample_data(ps_prune)[,c("pair_nb","ff4_prid","W")]
-# colnames(paired.meta) <- c("subjID", "sampID", "time")
-# paired.meta[1:4,]
-# 
-# # Transformation function 
-# otu.data <- data_prep(paired.otus, paired.meta, paired = TRUE, pseudoct = NULL)
-# otu.data$otu.props[1:3,1:3]  # OTU proportions 
-# otu.data$otu.clr[1:3,1:3]    # CLR-transformed proportions
-# res <- pltransform(otu.data, paired = TRUE, norm = TRUE)
-# 
-# # Binary transformation 
-# # 0.5 indicates OTU was present at Time 2, absent at Time 1
-# # -0.5 indicates OTU was present at Time 1, absent at Time 2 
-# # Row names are now subject IDs 
-# res$dat.binary[1:3,1:3]
-# 
-# # Quantitative transformation (see details in later sections)
-# round(res$dat.quant.prop[1:3,1:3], 2)
-# round(res$dat.quant.clr[1:3,1:3], 2)
-# # Average proportion per OTU per subject 
-# round(res$avg.prop[1:3,1:3], 2)
-# # This was a paired transformation 
-# res$type
-# 
-# # LUniFrac
-# D.unifrac <- LUniFrac(otu.tab = paired.otus, metadata = paired.meta, tree = tGTR$tree,
-#                       gam = c(0, 0.5, 1), paired = TRUE, check.input = TRUE)
-# # head(D.unifrac[, , "d_1"]) # gamma = 1 (quantitative paired transformation)
-# # head(D.unifrac[, , "d_UW"])  # unweighted LUniFrac (qualitative/binary paired transf.)]
-# 
-# #### attention !! #### cannot test MiRKAT with W as trait/exposure because W used for the pairs 
-# ## dimension of D.unifrac is n_pair x n_pair
-# 
-# # try to check if influence on diabetes
-# K.unweighted <- D2K(D.unifrac[, , "d_UW"])
-# 
-# id_pair_var <- data.frame(pair_nb = rownames(D.unifrac[, , "d_UW"]))
-# head(id_pair_var)
-# 
-# colnames(sample_data(ps_prune))[grep("glu",colnames(sample_data(ps)))]
-# table(sample_data(ps_prune)$u3tdiabet)
-# 
-# dat_dia_pair <- data.frame(sample_data(ps_prune)[sample_data(ps_prune)$W == 1,c("pair_nb","u3tdiabet","u3csex")])
-# 
-# id_pair_var <- merge(id_pair_var, dat_dia_pair, sort = FALSE,
-#                      by.x = "pair_nb", by.y = "pair_nb",all.x = TRUE)
-# 
-# head(id_pair_var)
-# dim(K.unweighted)
-# # testing using a single Kernel
-# MiRKAT(y = id_pair_var$u3tdiabet, X = NULL, Ks = K.unweighted, out_type = "D", 
-#        method = "davies", returnKRV = TRUE, returnR2 = TRUE)
