@@ -7,10 +7,11 @@ library(compositions)
 dat_prev_var <- NULL
 
 rank_names <- c( "ASV" , "Species" , "Genus"  , "Family" , "Order"  , "Class"  , "Phylum")
-
+ 
+## create data.frames with prevelance and variance of taxa values
 for(k in 1:length(rank_names)){
   
-  # load data ps
+  # load data ps filtered data at 5% prevalence threshold
   ps_work <- readRDS(paste0("/Users/alicesommer/Desktop/DACOMP_cluster/ps_filt_",k,".rds"))
   
   p = ncol(otu_table(ps_work))
@@ -23,14 +24,20 @@ for(k in 1:length(rank_names)){
   ps_ait <- transform_sample_counts(ps_work, function(x) {log((x + 1)/sum(x))})
   taxa_var_ait <- apply(unname(otu_table(ps_ait)), 2, function(x) var(x))
   
-  ## aggregation level
+  ## aggregation level indicator
   rank <- as.factor(rep(rank_names[k],p))
   
-  ## append data.frame
+  ## append to data.frames
+  # prevalence data.frame
   prev_var_rank <- data.frame(rank, taxa_prev, taxa_var_ait)
+  # variance data.frame
   dat_prev_var <- rbind(dat_prev_var, prev_var_rank)
   
 }
+
+#########################
+### SELECT REFERENCES ###
+#########################
 
 selected_ref <- NULL
 
@@ -47,8 +54,6 @@ for(r in 1:length(rank_names)){
   
   # condition <- dat_prev_var$taxa_var_ait[dat_prev_var$rank == rank_names[r]] < 2 & dat_prev_var$taxa_prev[dat_prev_var$rank == rank_names[r]] > .9
   # condition <- which(condition)
-
-  
   rank <- as.factor(rep(rank_names[r],length(condition)))
   
   ref_select <- data.frame(rank, condition)
@@ -74,6 +79,7 @@ dat_prev_var$col <- dat_prev_var$taxa_var_ait < 2 & dat_prev_var$taxa_prev > .9
 # special case for ASV 
 dat_prev_var$col[dat_prev_var$rank == "ASV"] <- dat_prev_var$taxa_var_ait[dat_prev_var$rank == "ASV"] < 3 & dat_prev_var$taxa_prev[dat_prev_var$rank == "ASV"] > .4
 
+## plot the reference selection process at all rank levels
 g_1 <- ggplot(data = dat_prev_var) +
   geom_point(aes(x = taxa_prev, y = taxa_var_ait, color = col), size = .3) +
   facet_wrap(rank~., ncol = 2) + 

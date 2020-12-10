@@ -3,11 +3,9 @@ library(ggplot2)
 library(RColorBrewer)
 library(reshape2)
 
+## filtered data at 5% prevalence threshold
 # ps_work <- readRDS("/Users/alicesommer/Desktop/diff_means_cluster_PM/ps_diff_mean_7_PM.rds")
-ps_work <- readRDS("/Users/alicesommer/Desktop/DACOMP_cluster/ps_filt_7_PM.rds") # filtered taxa
-
-# ps_work <- readRDS("/Users/alicesommer/Desktop/diff_means_cluster/ps_diff_mean_7.rds")
-ps_work <- readRDS("/Users/alicesommer/Desktop/DACOMP_cluster/ps_filt_7.rds") # filtered taxa
+ps_work <- readRDS("/Users/alicesommer/Desktop/DACOMP_cluster/ps_filt_7_PM.rds") 
 
 x2 = merge_samples(ps_work, "W")
 x3 = transform_sample_counts(x2, function(x) x/sum(x))

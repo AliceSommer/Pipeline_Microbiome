@@ -34,8 +34,9 @@ for(k in 1:length(rank_names)){
   # reference set
   ind_reference_taxa = selected_ref$condition[selected_ref$rank == rank_names[k]]
   
-  ###############################################################################################
+  ########################################
   #### TEST WITH DACOMP-RATIO METHOD ####
+  ########################################
   
   p_test = ncol(X)
   n_test = nrow(X)
@@ -81,9 +82,9 @@ for(k in 1:length(rank_names)){
   # which(p.adjust(p.values.ratio.normalization,method = 'BH') <= 0.15)
   # unname(tax_table(ps_work)[which(p.adjust(p.values.ratio.normalization,method = 'BH')<=0.2),])
   
-  #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  # Multiple comparison adjustment 
-  #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+  # Multiple comparison adjustment #
+  #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
   
   ### Lee, Forastiere, Miratix, Pillai (2017) method  for multiple comparison adjustment ### 
   
