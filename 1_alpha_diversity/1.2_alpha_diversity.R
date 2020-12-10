@@ -129,7 +129,7 @@ reg <- betta(summary(divnet_phylum$shannon)$estimate,
 reg$table
 estim_obs <- reg$table[2,1]
 
-## import W matrix 
+## W matrix 
 W_paired <- W_paired_smoke
 dim(W_paired)
 
