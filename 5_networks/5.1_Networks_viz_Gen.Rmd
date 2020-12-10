@@ -94,26 +94,26 @@ names(phylcol_names) <- rownames(tax_table(ps_Genus_prune)[, 'Phylum'])
 set.seed(1)
 
 shapeVec <- rep(1, ncol(otu_table(ps_Genus_prune)))
-shapeVec[c(116,5)] <- 2
+shapeVec[c(116)] <- 2
 names(shapeVec) <- names(phyl_ps_prune)
 
 rownames(layout_fr) <- names(phyl_ps_prune)
 
 # plot union graph
-plot(plot_net_u, 
-     layout = layout_fr,
-     labels = FALSE,
-     nodeColor = "colorVec",
-     colorVec = phylcol_names,
-     nodeTransp = 40,
-     borderCol = "lightgray", highlightHubs = FALSE, 
-     nodeSize = "clr", cexNodes = 1, 
-     cexTitle = 1,
-     edgeTranspLow = 30, 
-     edgeTranspHigh = 30,
-     nodeShape = c("circle", "triangle"),
-     featVecShape = shapeVec,
-     mar = c(6,5,3,2), groupNames = c("Union (High/Low) graph", "Low PM2.5"))
+# plot(plot_net_u,
+#      layout = layout_fr,
+#      labels = FALSE,
+#      nodeColor = "colorVec",
+#      colorVec = phylcol_names,
+#      nodeTransp = 40,
+#      borderCol = "lightgray", highlightHubs = FALSE,
+#      nodeSize = "clr", cexNodes = 1,
+#      cexTitle = 1,
+#      edgeTranspLow = 30,
+#      edgeTranspHigh = 30,
+#      nodeShape = c("circle", "triangle"),
+#      featVecShape = shapeVec,
+#      mar = c(6,5,3,2), groupNames = c("Union (High/Low) graph", "Low PM2.5"))
 ```
 
 ```{r, echo=TRUE, fig.height=9, fig.width=16}
@@ -126,26 +126,26 @@ plot_props <- plot(props_W,
      nodeTransp = 40,
      borderCol = "lightgray", highlightHubs = FALSE, 
      nodeSize = "clr", cexNodes = 1, 
-     cexTitle = 1,
+     cexTitle = 2,
      edgeTranspLow = 30, 
      edgeTranspHigh = 30,
      nodeShape = c("circle", "triangle"),
      featVecShape = shapeVec,
      # rmSingles = "inboth",
-     mar = c(6,5,3,2), groupNames = c("High PM2.5", "Low PM2.5"))
-legend("top", 
-       inset = .05, title = "phylum:",
+     mar = c(9,6,4,6), groupNames = c("High PM2.5", "Low PM2.5"))
+legend("top", cex = 1.3,
+       inset = .035, title = "phylum:",
        legend=levels(phyl_ps_prune), ncol = 2,
        col=phylcol, pt.bg = phylcol, bty = "n", pch=16) 
 legend("bottom", 
-       inset = .2, 
+       inset = .25, cex = 1.3,
        title = "weights:",
        legend=c("+","-"), lty = 1, lwd = 2,
        col=c("darkgreen","red"), bty="n", horiz = TRUE) 
 legend("bottom", 
-       inset = .28, 
+       inset = .35, cex = 1.3,
        title = "differentially abundant:",
-       legend=c("Genera"), 
+       legend=c("Genus"), 
        pch = c(2,0,5), 
        bty="n", horiz = FALSE) 
 ```
@@ -258,26 +258,56 @@ legend(x=.1, y=-1.1, legend=legend_cats$size_text, pt.cex=legend_cats$size_circl
 # lcc_names2 <- names(deg2[deg2 != 0])
 # names_clust <- unique(c(lcc_names1, lcc_names2))
 
-names_clust <- as.character(c(names(props_W$clustering$clust1)[which(props_W$clustering$clust1 %in% c(3))],
-                           names(props_W$clustering$clust2)[which(props_W$clustering$clust2 %in% c(4,5))]))
+names_clust <- as.character(c(names(props_W$clustering$clust1)[which(props_W$clustering$clust1 %in% c(1,3))],
+                           names(props_W$clustering$clust2)[which(props_W$clustering$clust2 %in% c(2,4,5))]))
 names_clust <- unique(names_clust)
 
-gen_names <- unname(tax_table(ps_Genus_prune)[,"Genus"])
-str1 <- str_sub(gen_names, 1, 4)
-str3 <- str_sub(gen_names, -3, -1)
-labels_1 <- paste0(str1, "'", str3)
-
-ord_names <- unname(tax_table(ps_Genus_prune)[labels_1 == "NA'NA", "Order"])
-labels_1[labels_1 == "NA'NA"] <- paste0("Ord_", str_sub(ord_names, 1, 3))
+labels_1 <- unname(tax_table(ps_Genus_prune)[,"Genus"])
 labels_1 <- as.character(labels_1)
 names(labels_1) <- rownames(tax_table(ps_Genus_prune)[, 'Genus'])
 
-p_zoom <- plot(props_W, 
+# Rumi
+rumi <- grep('Ruminococcaceae', labels_1)
+labels_1[rumi] <- paste0("Rumi._",lapply(str_split(labels_1[rumi], "_"), function(x) x[2]))
+# Lachno
+lac <- grep('Lachnospiraceae', labels_1)
+labels_1[lac] <- paste0("Lach._",lapply(str_split(labels_1[lac], "_"), function(x) x[2]))
+# Chris
+chris <- grep('Christensenellaceae', labels_1)
+labels_1[chris] <- paste0("Chris._",lapply(str_split(labels_1[chris], "_"), function(x) x[2]))
+
+# grep("Ruminiclostridium", plot_zoom$q1$Arguments$labels) # 57
+# grep("Cloacibacillus", plot_zoom$q1$Arguments$labels)
+# grep("Succinivibrio", plot_zoom$q1$Arguments$labels)
+# grep("Slackia", plot_zoom$q1$Arguments$labels)
+lab_font <- rep(3, length(names_clust))
+lab_font[c(30,49,50,57)] <- 4
+
+grep("ella_2", plot_zoom$q1$Arguments$labels)
+grep("bacterium", plot_zoom$q1$Arguments$labels)
+grep("giella", plot_zoom$q1$Arguments$labels)
+grep("Flav", plot_zoom$q1$Arguments$labels)
+grep("UCG-003", plot_zoom$q1$Arguments$labels)
+grep("lea", plot_zoom$q1$Arguments$labels)
+grep("ium_9", plot_zoom$q1$Arguments$labels)
+grep("Osci", plot_zoom$q1$Arguments$labels)
+grep("Anae", plot_zoom$q1$Arguments$labels)
+grep("Tyz", plot_zoom$q1$Arguments$labels)
+grep("Chris", plot_zoom$q1$Arguments$labels)
+grep("Blautia", plot_zoom$q1$Arguments$labels)
+grep("Lachnoclo", plot_zoom$q1$Arguments$labels)
+grep("AD3", plot_zoom$q1$Arguments$labels)
+lab_pos <- rep(4, length(names_clust)) # right
+lab_pos[c(4,16,18,24,25,29,43,62)] <- 1 # bottom
+lab_pos[c(2,7,10,12,17,19,21,36)] <- 2 # left
+lab_pos[c(14,26,41,46,51)] <- 3 # top
+
+plot_zoom <- p_zoom <- plot(props_W, 
      # sameLayout = TRUE, layoutGroup = 1, 
      layout = layout_fr[rownames(layout_fr) %in% names_clust,], 
      # repulsion = .6,
      labels = labels_1[names_clust],
-     labelFont = 1, 
+     # labelFont = 1, 
      cexLabels = 1,
      labelScale = FALSE,
      nodeColor = "colorVec",
@@ -292,7 +322,11 @@ p_zoom <- plot(props_W,
      nodeFilterPar = names_clust,
      edgeTranspLow = 30, edgeTranspHigh = 30,
      edgeWidth = .5, cexTitle = 1,
-     groupNames = c("High PM2.5", "Low PM2.5"))
+     mar = c(1,2,1,4),
+     groupNames = c("", ""),
+     labelFont = lab_font,
+     node.label.position = lab_pos 
+     )
 ```
 
 ```{r}

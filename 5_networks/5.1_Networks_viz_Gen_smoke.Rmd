@@ -65,7 +65,7 @@ condition <- dacomp_results$p_value_adj[dacomp_results$rank == "Genus"] <= 0.2
 graph1 <- graph_from_adjacency_matrix(props_W$input$adjaMat1, weighted = TRUE)
 graph2 <- graph_from_adjacency_matrix(props_W$input$adjaMat2, weighted = TRUE)
 
-graph_u <- union(graph1, graph2)
+graph_u <- igraph::union(graph1, graph2)
 ### weight
 E(graph_u)$weight <- pmin(E(graph_u)$weight_1, E(graph_u)$weight_2, na.rm = TRUE) # element-wise min. 
 graph_u <- delete_edge_attr(graph_u, "weight_1")
@@ -74,7 +74,7 @@ graph_u <- delete_edge_attr(graph_u, "weight_2")
 set.seed(40)
 layout_fr <- layout_with_fr(graph_u, weights = E(graph_u)$weight)
 # layout_fr <- layout.forceatlas2(graph_u, iterations=500, plotstep=500,
-#                                 gravity = .5, k = 800)
+#                                 gravity = .5, k = 1000)
 
 plot_net_u <- props_W
 plot_net_u$input$adjaMat1 <- as_adjacency_matrix(graph_u, attr="weight", sparse = FALSE)
@@ -138,18 +138,18 @@ plot_props <- plot(props_W,
      nodeShape = c("circle", "triangle"),
      featVecShape = shapeVec,
      # rmSingles = "inboth",
-     mar = c(6,5,3,2), groupNames = c("Smoking", "Non-smoking"))
-legend("top", 
-       inset = .04, title = "phylum:",
+     mar = c(9,6,4,6), groupNames = c("Smoking", "Non-smoking"))
+legend("top", cex = 1.3,
+       inset = .035, title = "phylum:",
        legend=levels(phyl_ps_prune), ncol = 2,
        col=phylcol, pt.bg = phylcol, bty = "n", pch=16) 
 legend("bottom", 
-       inset = .2, 
+       inset = .25, cex = 1.3,
        title = "weights:",
        legend=c("+","-"), lty = 1, lwd = 2,
        col=c("darkgreen","red"), bty="n", horiz = TRUE) 
 legend("bottom", 
-       inset = .28, 
+       inset = .35, cex = 1.3,
        title = "differentially abundant:",
        legend=c("Genus"), 
        pch = c(2,0,5), 
@@ -267,21 +267,50 @@ names_clust <- as.character(c(names(props_W$clustering$clust1)[which(props_W$clu
                             names(props_W$clustering$clust2)[which(props_W$clustering$clust2 %in% c(1,2,4))]))
 names_clust <- unique(names_clust)
 
-labels_1 <- as.factor(tax_table(ps_Genus_prune)[, 'Genus'])
-names(labels_1) <- rownames(tax_table(ps_Genus_prune)[, 'Genus'])
+# labels_1 <- as.factor(tax_table(ps_Genus_prune)[, 'Genus'])
+# names(labels_1) <- rownames(tax_table(ps_Genus_prune)[, 'Genus'])
 
 labels_1 <- unname(tax_table(ps_Genus_prune)[,"Genus"])
-labels_1[is.na(labels_1)] <- paste0("Order_", unname(tax_table(ps_Genus_prune)[is.na(labels_1),"Order"]))
+# labels_1[is.na(labels_1)] <- paste0("Order_", unname(tax_table(ps_Genus_prune)[is.na(labels_1),"Order"]))
+
+# Rumi
+rumi <- grep('Ruminococcaceae', labels_1)
+labels_1[rumi] <- paste0("Rumi._",lapply(str_split(labels_1[rumi], "_"), function(x) x[2]))
+# Lachno
+lac <- grep('Lachnospiraceae', labels_1)
+labels_1[lac] <- paste0("Lach._",lapply(str_split(labels_1[lac], "_"), function(x) x[2]))
+# Chris
+chris <- grep('Christensenellaceae', labels_1)
+labels_1[chris] <- paste0("Christensenellaceae_",lapply(str_split(labels_1[chris], "_"), function(x) x[2]))
+
 labels_1 <- as.character(labels_1)
 names(labels_1) <- rownames(tax_table(ps_Genus_prune)[, 'Genus'])
 
-plot(props_W, 
+labels_1["Seq226"] <- "Clostridiales_vadinBB60 (Genus: unknown)"
+
+# grep("Ruminiclo", plot_zoom$q1$Arguments$labels)
+# grep("Chris", plot_zoom$q1$Arguments$labels)
+# grep("UCG-010", plot_zoom$q1$Arguments$labels)
+lab_font <- rep(3, length(names_clust))
+lab_font[c(10,14,32)] <- 4
+
+# grep("NK4", plot_zoom$q1$Arguments$labels)
+# grep("Fusi", plot_zoom$q1$Arguments$labels)
+# grep("Flav", plot_zoom$q1$Arguments$labels)
+# grep("013", plot_zoom$q1$Arguments$labels)
+# grep("Cop", plot_zoom$q1$Arguments$labels)
+# grep("BB60", plot_zoom$q1$Arguments$labels)
+lab_pos <- rep(4, length(names_clust))
+lab_pos[c(18,20,26,27)] <- 1
+lab_pos[c(14)] <- 2
+lab_pos[c(5,19)] <- 3
+
+plot_zoom <- plot(props_W, 
      # sameLayout = TRUE, layoutGroup = 1, 
      layout = layout_fr[rownames(layout_fr) %in% names_clust,], 
-     # repulsion = .6,
      labels = labels_1[names_clust],
-     labelFont = 1, 
-     cexLabels = 1.5,
+     # labelFont = 3, 
+     cexLabels = 1,
      labelScale = FALSE,
      featVecCol = phyl_ps_prune[names_clust],
      nodeColor = "colorVec",
@@ -294,9 +323,16 @@ plot(props_W,
      featVecShape = shapeVec[names_clust],
      nodeFilterPar = names_clust,
      edgeTranspLow = 30, edgeTranspHigh = 30,
-     edgeWidth = .5, cexTitle = 2,
-     groupNames = c("Smoking", "Non-smoking"))
+     edgeWidth = .5, cexTitle = 1,
+     # groupNames = c("Smoking", "Non-smoking"),
+     groupNames = c("", ""),
+     # node.label.offset = c(0.1,0.1),
+     node.label.position = lab_pos, 
+     mar = c(1,2,1,4),
+     labelFont = lab_font
+     )
 ```
+
 ### Diffnet results
 
 ```{r, fig.height=8, fig.width=15}
@@ -313,27 +349,6 @@ for(i in 1:length(diff_ass_split)){
   print(tax_table(ps_Genus_prune)[diff_ass_split[[i]],c("Order","Genus")])
 }
 
-plot(props_W, 
-     # sameLayout = TRUE, layoutGroup = 1, 
-     layout = layout_fr[rownames(layout_fr) %in% names_clust,], 
-     # repulsion = .6,
-     labels = labels_1[names_clust],
-     labelFont = 1, 
-     cexLabels = 1.5,
-     labelScale = FALSE,
-     featVecCol = phyl_ps_prune[names_clust],
-     nodeColor = "colorVec",
-     colorVec = phylcol_names[names_clust],
-     borderCol = "lightgray", highlightHubs = FALSE,
-     nodeSize = "clr", cexNodes = 1, 
-     nodeTransp = 40,
-     nodeFilter = "names",
-     nodeShape = c("circle", "triangle"),
-     featVecShape = shapeVec[names_clust],
-     nodeFilterPar = names_clust,
-     edgeTranspLow = 30, edgeTranspHigh = 30,
-     edgeWidth = .5, cexTitle = 2,
-     groupNames = c("Smoking", "Non-smoking"))
 ```
 
 

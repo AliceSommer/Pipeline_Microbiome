@@ -1,24 +1,47 @@
 library(NetCoMi)
-library(filematrix)
+# library(filematrix)
 library(phyloseq)
 library(tidyverse)
+library(ggplot2)
+library(reshape2)
 
 load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/ps_to_net_Gen_smoke.RData')
+# load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/ps_to_net_Gen.RData')
 
 load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/net_W_output_Gen_smoke_Oct.RData')
+# load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/net_W_output_Gen.RData')
 
 # load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/props_W_Gen_smoke_Oct.RData')
 
 
 ### netCompare ###
 load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/comp_W_Gen_10K.RData')
+# load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/comp_W_Gen_10K_PM.RData')
 
 summary(comp_W)
 
-### diffnet ###
-load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/diff_net_Gen_10K.RData')
+metrics <- c('diffClustCoef', 'diffModul', 'diffpnRatio')
+Tarray_metrics <- comp_W$permDiffGlobal[,metrics]
+colnames(Tarray_metrics) <- c('Clustering coefficient', 'Modularity', '+ edges/- edges')
+Tarray_metrics_melt <- melt(Tarray_metrics)
+colnames(Tarray_metrics_melt) <- c('','variable','value')
 
-plot(diff_net, cexNodes = 0.8, cexLegend = 0.8, mar = c(7,7,7,10))
+dat_text_lab <- data.frame(variable = colnames(Tarray_metrics))
+dat_text_lab$obs_stat <- c(comp_W$diffGlobal$diffClustCoef, comp_W$diffGlobal$diffModul, comp_W$diffGlobal$diffpnRatio)
+
+plot <- ggplot(data = Tarray_metrics_melt, aes(x = value)) + 
+  # geom_histogram(aes(y = ..density..) , binwidth=.2) +  
+  geom_histogram(binwidth=.01) +  
+  facet_wrap(~variable, ncol = 3, scales = 'free') +
+  geom_vline(data = dat_text_lab, mapping = aes(xintercept = obs_stat), 
+             linetype = "dashed", colour = "red", size = .3) 
+
+
+### diffnet ###
+# load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/diff_net_Gen_10K.RData')
+load('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome/diff_net_Gen_10K_PM.RData')
+
+plot(diff_net, adjusted = FALSE, cexNodes = 0.8, cexLegend = 0.7, mar = c(7,7,7,10))
 
 head(table(diff_net$pvalsVec))
 head(table(diff_net$pAdjustVec))
@@ -43,8 +66,8 @@ p_val <- diff_net$pvalsVec[which(diff_net$pvalsVec < 0.005)]
 diff_ass_split <- str_split(diff_ass, "_")
 
 for(i in 1:length(diff_ass_split)){
-  print(p_val[i])
-  print(diff_ass_split[[i]])
+  print(paste('p-value:',p_val[i]))
+  # print(diff_ass_split[[i]])
   print(tax_table(ps_Genus_prune)[diff_ass_split[[i]],c("Order","Genus")])
 }
 
@@ -76,6 +99,7 @@ tail(names(diff_net$testStatData[diff_net$testStatData != 0]))
 identical(names(vector_FALSE[vector_FALSE == FALSE]), names(diff_net$testStatData[diff_net$testStatData != 0]))
 
 subset_edges <- names(vector_FALSE[vector_FALSE == FALSE])
+length(subset_edges)
 
 # STEP 1 to 3: recorded in "stats_matrix"
 dim(diff_net$testStatPerm)
@@ -119,6 +143,14 @@ which(p_value_adj < .3)
 diff_net$pvalsVec[subset_edges][which(p_value_adj < .3)]
 
 p_value_adj[which(p_value_adj < .3)]
+
+loc_diff_ass <- which(subset_edges %in% diff_ass)
+
+for(i in 1:length(diff_ass_split)){
+  print(paste('p-value:',p_val[i]))
+  print(paste('p-value (adj.):',p_value_adj[loc_diff_ass][i]))
+  print(tax_table(ps_Genus_prune)[diff_ass_split[[i]],c("Family","Order","Genus")])
+}
 
 
 
