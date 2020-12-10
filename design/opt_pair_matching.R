@@ -56,7 +56,6 @@ table(data$W)
 #########################
 # Before matching plots #
 #########################
-source("http://stat.duke.edu/courses/Spring14/sta320.01/CausalInference.R")
 
 colnames_covs = c("u3talteru", "u3tbmi", "u3csex", 
                   "u3tcigsmk2", "u3tcigsmk3", "u3tcigsmk1",
@@ -64,46 +63,6 @@ colnames_covs = c("u3talteru", "u3tbmi", "u3csex",
                   #"SeasonSummer", "SeasonSpring", "SeasonWinter", "SeasonFall",
                   "u3tsysmm", "u3tdiamm", "u3lk_chola", "u3lk_hdla", "u3lk_ldla" , "u3lk_tria",
                   "u3tmi", "u3tap", "u3tschl", "u3tca")
-
-balance.plot <- function(d, cov.names = NULL, d2= NULL, main="", left.mar=1.5, right.mar=.1, bottom.mar=.8, top.mar=NULL, xlim=NULL, ...) {
-  #d is a vector of differences (probably standardized)
-  
-  k = length(d)
-  
-  if(is.null(xlim)) {
-    m = max(abs(d))
-    xlim=c(-m,m)
-  }
-  
-  
-  #if covariate names not given
-  if (is.null(cov.names)) {
-    cov.names = rep(NA, k)
-    for (j in 1:k) cov.names[j] = paste("x",sep="", j)
-  }
-  
-  #setting the top margin, depending on whether there is a title or not
-  if (is.null(top.mar)) {
-    if (main=="") top.mar=.1
-    else top.mar=.8
-  }
-  cur.mai = par()$mai 
-  par(mai=c(bottom.mar, left.mar, top.mar, right.mar))
-  
-  #creating the plot
-  plot(d, k:1, xlim=xlim, pch=19, xlab="Standardized Difference in Covariate Means", axes=FALSE, ylab="", main=main, ...)
-  axis(1)
-  axis(2, at=k:1, lab = cov.names, las=1, ...)
-  abline(v=0)
-  abline(v=0.1, lty=3)
-  abline(v=-0.1, lty=3)
-  
-  if (!is.null(d2)) points(d2, k:1, pch=19, col="red")
-  
-  #reseting margins
-  par(mai = cur.mai)
-}
-cov.balance(data[,colnames_covs], data$W)
 
 ### Age ###
 g_age <- ggplot(data, aes(x = u3talteru, fill = factor(W)))  +
@@ -187,13 +146,14 @@ g <- grid.arrange(g_age, g_bmi, g_sex, g_alcohol, g_phys, g_smoke, g_educ, g_sea
 ### Lab variables ###
 
 grep('u3tsysmm', colnames(data)); grep('u3lk_chola',colnames(data)); grep('u3lk_tria',colnames(data)) ## +2 cos no need of WHR
-dat_melt_cont_1 = melt(data, id.vars = "W", measure.vars = c(18:19,43:46))
+dat_melt_cont_1 = melt(data, id.vars = "W", measure.vars = c(18:19))
 
 # lvls = levels(as.factor(dat_melt_cont_1$variable))
 # # nacounts <- by(dat_melt_cont_1, as.factor(dat_melt_cont_1$variable), function(x) sum(is.na(x$value)))
 # # levels(dat_melt_cont_1$variable) = paste(lvls," (NA=",as.integer(nacounts),")",sep="")
 
-levels(dat_melt_cont_1$variable) <- c('sys. BP', 'dia. BP', 'cholesterol', 'HDL chol.', 'LDL chol.', 'triglyceride')
+levels(dat_melt_cont_1$variable) <- c('systolic BP', 'diastolic BP') 
+                                      # 'cholesterol', 'HDL chol.', 'LDL chol.', 'triglyceride')
 
 g_lab <- ggplot(dat_melt_cont_1, aes(x=value)) +
   geom_density(aes(group=factor(W), fill=factor(W)),
@@ -481,13 +441,14 @@ g_after <- grid.arrange(arrangeGrob(g_age, g_bmi, g_sex, g_alcohol, g_phys, g_sm
 ### Lab variables ###
 
 grep('u3tsysmm', colnames(matched_df)); grep('u3lk_chola',colnames(matched_df)); grep('u3lk_tria',colnames(matched_df)) ## +2 cos no need of WHR
-dat_melt_cont_1_after = melt(matched_df, id.vars = "W", measure.vars = c(18:19,43:46))
+dat_melt_cont_1_after = melt(matched_df, id.vars = "W", measure.vars = c(18:19))
 
 # nacounts <- by(dat_melt_cont_1_after, as.factor(dat_melt_cont_1_after$variable), function(x) sum(is.na(x$value)))
 # lvls = levels(as.factor(dat_melt_cont_1_after$variable))
 # levels(dat_melt_cont_1_after$variable) = paste(lvls," (NA=",as.integer(nacounts),")",sep="")
 
-levels(dat_melt_cont_1_after$variable) <- c('sys. BP', 'dia. BP', 'cholesterol', 'HDL chol.', 'LDL chol.', 'triglyceride')
+levels(dat_melt_cont_1_after$variable) <- c('systolic BP', 'diastolic BP')
+                                            # 'cholesterol', 'HDL chol.', 'LDL chol.', 'triglyceride')
 
 g_lab_after <- ggplot(dat_melt_cont_1_after, aes(x=value)) +
   geom_density(aes(group=factor(W), fill=factor(W)),
