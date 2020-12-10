@@ -1,73 +1,69 @@
 library(phyloseq); packageVersion("phyloseq")
 library(ggplot2); packageVersion("ggplot2")
 
-###############################################################################
+#############
+# load data #
+#############
 
-# set working directory
+## set working directory
 setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome')
 
-# load microbiome data
+## load microbiome data
 ASV_table <- readRDS('dada2output/seqtab2020.rds')
 taxon_assign <- readRDS('dada2output/taxa2020.rds')
+## load phylogenetic information
+load("dada2output/phylotree2020.RData")
 
-# load sample/matched_data
+## load sample/matched_data
 # load('dat_matched_PM25_bis.RData')
 load('dat_matched_smoke_bis.RData')
 
-# # load original dataset (try other Ws)
-# df <- read.csv('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/KORA\ DATA/Microbiome_data/KORA_microbiome_variables.csv')
-
-# load W matrix for randomization test
+## load W matrix for randomization test
 # load("W_paired_PM25.Rdata")
 load("W_paired_smoke_bis.Rdata")
 
-# matched AP data
+############################
+# create a phyloseq object # 
+############################
+
+## order covariates data frame
 sample_df <- matched_df[order(matched_df$ff4_prid),]
 sample_df$W <- as.factor(sample_df$W)
-# # "other" data
-# sample_df <- df[order(df$ff4_prid),]
-# sample_df$W <- as.factor(as.numeric(sample_df$u3tcigsmk == 1))
-
 samples.out <- as.character(sample_df$ff4_prid)
 rownames(sample_df) <- samples.out
-################################################################################
 
-# create a phyloseq object
+## combine in phyloseq
 ps <- phyloseq(otu_table(ASV_table, taxa_are_rows=FALSE),
                sample_data(sample_df),
                tax_table(taxon_assign))
 ps
 
-# locate the species that are totally absent in the matched data 
-# 1. have a vector of nr. of observed samples per taxa
-vec_taxa <- apply(otu_table(ps), 2, function(x) sum(x > 0, na.rm = TRUE))
-length(which(vec_taxa == 0))
-# 2. how many tax are obs. in at least x% of samples
-perc <- 0.10 # x%
-# samp_perc <- trunc(dim(sample_df)[1]*perc)
-samp_perc <- 0
-length(which(vec_taxa > samp_perc))
-
-ps_prune <- prune_taxa(vec_taxa > samp_perc, ps)
+## locate the species that are totally absent in the matched data
+empty_species <- colSums(otu_table(ps))
+length(which(empty_species == 0))
+# remove them
+ps_prune <- prune_taxa(empty_species != 0, ps)
 
 # ## agglomerate to Species ##
 # ps_Species <- tax_glom(ps, taxrank = "Species", NArm = FALSE)
 # vec_taxa_Sp <- apply(otu_table(ps_Species), 2, function(x) sum(x > 0, na.rm = TRUE))
 # length(which(vec_taxa_Sp > samp_perc))
-# ps_Species <- prune_taxa(vec_taxa_Sp >= samp_perc, ps_Species)
+# ps_Species <- prune_taxa(vec_taxa_Sp >= 0, ps_Species)
 # ps_Species
 
 ## agglomerate to Genus ##
 ps_Genus <- tax_glom(ps_prune, taxrank = "Genus", NArm = FALSE)
 vec_taxa_Gen <- apply(otu_table(ps_Genus), 2, function(x) sum(x > 0, na.rm = TRUE))
 table(vec_taxa_Gen)
-ps_Genus_prune <- prune_taxa(vec_taxa_Gen >= samp_perc, ps_Genus)
+ps_Genus_prune <- prune_taxa(vec_taxa_Gen >= 0, ps_Genus)
 ps_Genus_prune
 
-## agglomerate to Order ##
-ps_Order <- tax_glom(ps_prune, taxrank = "Order", NArm = FALSE)
-
 ps <- ps_Genus_prune
+
+###########################################
+### 1. TEST-STATISTIC FROM CAO, LIN, LI ###
+###########################################
+# Yuanpei Cao,  Wei Lin,  Hongzhe Li (2017) - Two-sample tests of high-dimensional means for compositional data 
 
 # Filter the data
 n<-dim(otu_table(ps))[1]
@@ -127,9 +123,9 @@ clr_x_stat <- max((clr_x_mean/sqrt(clr_x_stat_var) - clr_y_mean/sqrt(clr_x_stat_
 p_clrx <- 1-exp(-1/sqrt(pi)*exp(-(clr_x_stat-(2*log(p)-log(log(p))))/2))
 clr_x_stat; p_clrx
 
-####
-#### FISHER
-####
+#######################################################
+### 2. RANDOMIZATION-TEST MEAN DIFF. TEST STATISTIC ###
+#######################################################
 
 matrix_otu_bind <- rbind(clog_TX, clog_TY)
 dim(matrix_otu_bind)

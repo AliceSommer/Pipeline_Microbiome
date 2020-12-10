@@ -76,10 +76,10 @@ plot_gumbel <- ggplot(data = Tarray_cst_melt, aes(x = value)) +
             colour = "blue", size = 2.5) + 
   xlab('M − 2log p + log log p')
 
-# ggsave(file = '/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/gumbel_diff_means_PM.jpeg', 
+# ggsave(file = '/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/gumbel_diff_means_PM.jpeg',
 #        plot_gumbel,
 #        dpi=300,
-#        width = 120,
+#        width = 130,
 #        height = 180,
 #        units = "mm")
 
