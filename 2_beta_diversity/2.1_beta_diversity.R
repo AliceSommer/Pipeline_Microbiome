@@ -10,9 +10,10 @@ library(RColorBrewer)
 #############
 # load data #
 #############
+wd <- '/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome'
 
 ## set working directory
-setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE/data_pipeline_microbiome')
+setwd(wd)
 
 ## load microbiome data
 ASV_table <- readRDS('dada2output/seqtab2020.rds')
