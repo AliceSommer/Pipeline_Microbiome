@@ -9,8 +9,8 @@ Framework
 Data access
 -----------
 
-The KORA cohort study ([Holle et
-al. (2005)](https://pubmed.ncbi.nlm.nih.gov/16032513/)) data is only
+The KORA cohort study \[[Holle et
+al. (2005)](https://pubmed.ncbi.nlm.nih.gov/16032513/)\] data is only
 accessible after applying to a research project on the
 [KORA-passt](https://epi.helmholtz-muenchen.de) platform.
 
@@ -28,7 +28,7 @@ generated directly after matching.
 
 *Note 1*: the matching functions
 [Stephane\_matching.R](misc/Stephane_matching.R) were written in Rcpp by
-Dr. Stéphane Shao.
+Stéphane Shao.
 
 *Note 2*: other matching strategies are valid. The researcher should
 take the conceptual hypothetical experiment into account when choosing
@@ -41,29 +41,38 @@ KORA variables. See
 Stage 3: Analysis
 -----------------
 
+The ASV (or OTU) data table, matched dataset, and phylogenetic tree are
+combined in a [phyloseq](https://joey711.github.io/phyloseq/) object
+before making statistical analyses. Thus, the following code can be used
+for any other data combined in a phyloseq object.
+
 ### Diversity
 
-#### Alpha and richness
+#### Richness and alpha-diversity
 
-See [`1_alpha_diversity`](1_alpha_diversity)
+R code in [`1_alpha_diversity`](1_alpha_diversity) folder.
 
-Willis’ R package [`breakaway`](https://github.com/adw96/breakaway) for
-richness and [`DivNet`](https://github.com/adw96/DivNet) for shannon
-index.
+We used Amy Willis’ R packages
+[`breakaway`](https://github.com/adw96/breakaway) \[[Willis and Bunge,
+2015](https://onlinelibrary.wiley.com/doi/abs/10.1111/biom.12332)\] for
+richness estimation and [`DivNet`](https://github.com/adw96/DivNet) for
+Shannon index estimation \[[Willis,
+2020](https://academic.oup.com/biostatistics/advance-article-abstract/doi/10.1093/biostatistics/kxaa015/5841114)\].
 
-#### Beta
+#### Beta-diversity
 
-See [`2_beta_diversity`](2_beta_diversity)
+R code in [`2_beta_diversity`](2_beta_diversity) folder.
 
-Zhao R package documentation:
-[`MiRKAT`](https://cran.r-project.org/web/packages/MiRKAT/index.html).
+The distance calculations where done with the phyloseq package and we
+used Anna Plantinga’s R package
+[`MiRKAT`](https://cran.r-project.org/web/packages/MiRKAT/index.html)
+for the test statistic \[\].
 
 ### Compostion
 
 #### Compositional equivalence
 
-See [`3_mean_diff_test`](3_mean_diff_test) for our implementation of
-this test statistic.
+R code in [`3_mean_diff_test`](3_mean_diff_test) folder.
 
 Code:
 [`composition-two-sampe-test`](https://github.com/yuanpeicao/composition-two-sampe-test)
@@ -71,13 +80,13 @@ github.
 
 #### Differential abundance
 
-See [`4_differential_abundance`](4_differential_abundance)
+R code in [`4_differential_abundance`](4_differential_abundance) folder.
 
 Brill R package: [`dacomp`](https://github.com/barakbri/dacomp) github.
 
 #### Correlation structure
 
-See [`5_networks`](5_networks)
+R code in [`5_networks`](5_networks) folder.
 
 Peschel R package: [`NetCoMi`](https://github.com/stefpeschel/NetCoMi)
 github.
@@ -91,3 +100,13 @@ References
 [MONICA/KORA Study Group. KORA–a research platform for population based
 health research.](https://pubmed.ncbi.nlm.nih.gov/16032513/)
 *Gesundheitswesen*, 67.
+
+\[Willis and Bunge, 2015\] Willis A and Bunge J (2015); [Estimating
+diversity via frequency
+ratios.](https://onlinelibrary.wiley.com/doi/abs/10.1111/biom.12332)
+*Biometric Methodology*, 71:1042-1049.
+
+\[Willis and Bryan, 2020\] Willis A and Bryan D.M (2020); [Estimating
+diversity in networked ecological
+communities](https://academic.oup.com/biostatistics/advance-article-abstract/doi/10.1093/biostatistics/kxaa015/5841114)
+*Biostatistics*, kxaa015
