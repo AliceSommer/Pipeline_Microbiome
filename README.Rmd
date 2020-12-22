@@ -50,7 +50,7 @@ The distance calculations where done with the phyloseq package and we used Anna 
 #### Compositional equivalence
 
 R code in [`3_mean_diff_test`](3_mean_diff_test) folder.
-
+ 
 Cao, Lin, and Li's github repository: [`composition-two-sampe-test`](https://github.com/yuanpeicao/composition-two-sampe-test) [[Cao, Lin, and Li, 2018](https://academic.oup.com/biomet/article/105/1/115/4591648)].
 
 #### Differential abundance
