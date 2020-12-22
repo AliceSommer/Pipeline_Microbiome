@@ -13,10 +13,9 @@ output:
 
 ## Data access
 
-Blabla on KORA ([Holle et al. (2005)](https://pubmed.ncbi.nlm.nih.gov/16032513/)) and links to access.
+To have access to the data we used from the KORA cohort study ([Holle et al. (2005)](https://pubmed.ncbi.nlm.nih.gov/16032513/)) an application has to be filled on the [KORA-passt](https://epi.helmholtz-muenchen.de) platform.
 
-See [`microbiome_ASV_data`](microbiome_ASV_data) file for details about the data pre-processing.
-See Bla for recode.
+In the [`microbiome_ASV_data`](microbiome_ASV_data) file are the details about the data pre-processing and the data files handed-in after successful application to a KORA project.
 
 ## Stage 2: Design
 
