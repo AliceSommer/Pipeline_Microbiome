@@ -1,3 +1,6 @@
+Randomization-based causal inference framework to analyze 16s rRNA gut microbiome data.
+=======================================================================================
+
 Framework
 ---------
 
@@ -6,4 +9,28 @@ Framework
 Data access
 -----------
 
-See microbiome\_ASV\_data file
+See ([`microbiome_ASV_data`](microbiome_ASV_data))
+
+Stage 2: Design
+---------------
+
+Stage 3: Analysis
+-----------------
+
+### Diversity
+
+#### Alpha and richness
+
+#### Beta
+
+### Compostion
+
+#### Compositional equivalence
+
+#### Differential abundance
+
+#### Correlation structure
+
+#### Differential association
+
+#### Further analyses (metabolites)
