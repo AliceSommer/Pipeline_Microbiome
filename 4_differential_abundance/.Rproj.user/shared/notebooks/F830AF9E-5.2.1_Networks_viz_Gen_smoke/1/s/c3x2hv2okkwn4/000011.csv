@@ -1,0 +1,5 @@
+"0","legend(""bottom"", "
+"0","       inset = .13, "
+"0","       title = ""weights:"","
+"0","       legend=c(""+"",""-""), lty = 1, lwd = 2,"
+"0","       col=c(""darkgreen"",""red""), bty=""n"", horiz = TRUE) "

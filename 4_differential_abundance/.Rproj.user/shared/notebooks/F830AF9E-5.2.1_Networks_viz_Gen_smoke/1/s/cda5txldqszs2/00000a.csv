@@ -1,0 +1,23 @@
+"0","plot(props_W, 
+     sameLayout = TRUE, layoutGroup = 1, 
+     #labels = list(props_W$clustering$clust1[names_clust], props_W$clustering$clust2[names_clust]), 
+     labelFont = 1, cexLabels = 1.5,
+     nodeColor = ""colorVec"",
+     colorVec =  list(plot_cluster$q1$Arguments$color[names_clust],
+                    plot_cluster$q2$Arguments$color[names_clust]),
+     sameClustCol = FALSE,
+     nodeTransp = 40, 
+     borderCol = ""gray40"", highlightHubs = FALSE,
+     nodeSize = ""clr"", 
+     cexLabel = 1, 
+     labelScale = FALSE,
+     nodeFilter = ""names"",
+     nodeShape = c(""circle"", ""triangle"", ""square"",""diamond""),
+     featVecShape = shapeVec[names_clust],
+     nodeFilterPar = names_clust,
+     edgeTranspLow = 10, edgeTranspHigh = 10,
+     groupNames = c(""Smoking (community 2)"", ""Non-smoking""))
+"
+"2","The following arguments are not documented and likely not arguments of qgraph and thus ignored: cexLabel"
+"2","The following arguments are not documented and likely not arguments of qgraph and thus ignored: cexLabel"
+"2","The following arguments are not documented and likely not arguments of qgraph and thus ignored: cexLabel"

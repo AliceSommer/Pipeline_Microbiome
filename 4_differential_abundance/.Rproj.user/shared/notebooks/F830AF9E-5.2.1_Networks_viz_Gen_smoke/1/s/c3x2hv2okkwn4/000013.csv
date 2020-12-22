@@ -1,0 +1,6 @@
+"0","legend(""bottom"", "
+"0","       inset = .19, "
+"0","       title = ""differentially abundant:"","
+"0","       legend=c(""Genus (Marvinbryantia)"",""Family (Coriobacteriaceae, nb. ASV = 9)"",""Class (Mollicutes, nb. ASV = 2)""), "
+"0","       pch = c(2,0,5), "
+"0","       bty=""n"", horiz = FALSE) "
