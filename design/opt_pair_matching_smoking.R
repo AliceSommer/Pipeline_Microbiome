@@ -12,7 +12,7 @@ wd <- '/Users/alicesommer/Desktop/Bureau/DOCTORATE'
 setwd(wd)
 
 # load data formated 
-load('data_pipeline_microbiome/dat_transformed_NOV18.RData')
+load('data_pipeline_microbiome/dat_transformed.RData')
 
 ######################
 # Exclusion criteria #
@@ -184,7 +184,7 @@ g_medic <- ggplot(dat_melt_bin3, aes(x = factor(W), fill = factor(value))) +
 ############
 
 # import Rcpp functions for pair matching 
-source("Pipeline_Microbiome/misc/matchingOzone_functions_2.R")
+source("Pipeline_Microbiome/misc/Stephane_matching.R")
 
 data_match = data
 
