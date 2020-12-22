@@ -23,6 +23,7 @@ The R code for our pair matching implementation and diagnostic plots generation 
 
 Note 1: the matching functions [Stephane_matching.R](misc/Stephane_matching.R) were written in Rcpp by Dr. Stéphane Shao.
 Note 2: other matching strategies are valid. The researcher should take the conceptual hypothetical experiment into account when choosing its strategy.
+Note 3: to make the matching easier we re-formated/coded the original KORA variables. See [`misc/format_KORA_variables.R`](misc/format_KORA_variables.R) file.
 
 ## Stage 3: Analysis
 

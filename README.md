@@ -9,22 +9,30 @@ Framework
 Data access
 -----------
 
-To have access to the data we used from the KORA cohort study ([Holle et
-al. (2005)](https://pubmed.ncbi.nlm.nih.gov/16032513/)) an application
-has to be filled on the [KORA-passt](https://epi.helmholtz-muenchen.de)
-platform.
+The KORA cohort study ([Holle et
+al. (2005)](https://pubmed.ncbi.nlm.nih.gov/16032513/)) data is only
+accessible after applying to a research project on the
+[KORA-passt](https://epi.helmholtz-muenchen.de) platform.
 
-In the [`microbiome_ASV_data`](microbiome_ASV_data) file are the details
-about the data pre-processing and the data files handed-in after
+In the [`microbiome_ASV_data`](microbiome_ASV_data) folder are the
+details about the data pre-processing and the data files handed-in after
 successful application to a KORA project.
 
 Stage 2: Design
 ---------------
 
-Matching explanation. Links to other options more “mainstream”.
+The R code for our pair matching implementation and diagnostic plots
+generation can be found in the [`design`](design) file. The matrix of
+10,000 possible randomization of the intervention assignment is also
+generated directly after matching.
 
-See [`design`](design) file for the code of our pair matching
-implementation and diagnostic plots.
+Note 1: the matching functions
+[Stephane\_matching.R](misc/Stephane_matching.R) were written in Rcpp by
+Dr. Stéphane Shao. Note 2: other matching strategies are valid. The
+researcher should take the conceptual hypothetical experiment into
+account when choosing its strategy. Note 3: to make the matching easier
+we re-formated/coded the original KORA variables. See
+[`misc/format_KORA_variables.R`](misc/format_KORA_variables.R) file.
 
 Stage 3: Analysis
 -----------------
