@@ -75,7 +75,7 @@ github.
 References
 ----------
 
-\[Holle et al., 2005\] Holle R, Happich M, Löwel H, Wichmann HE;
+\[Holle et al., 2005\] Holle R, Happich M, Löwel H, Wichmann HE (2005);
 [MONICA/KORA Study Group. KORA–a research platform for population based
 health research.](https://pubmed.ncbi.nlm.nih.gov/16032513/)
-Gesundheitswesen. 2005 Aug;67
+*Gesundheitswesen*, 67.
