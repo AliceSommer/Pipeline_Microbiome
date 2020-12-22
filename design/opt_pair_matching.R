@@ -6,15 +6,16 @@ library(gridExtra)
 library(igraph)
 
 ###############################################################################
+wd <- '/Users/alicesommer/Desktop/Bureau/DOCTORATE'
 
 # set working directory
-setwd('/Users/alicesommer/Desktop/Bureau/DOCTORATE')
+setwd(wd)
 
 # load data formated 
-load('data_pipeline_microbiome/dat_transformed_NOV18.RData')
+load('data_pipeline_microbiome/dat_transformed.RData')
 
 # download long-term exposure data 
-dat_pollution = read.sas7bdat('data_pipeline_microbiome/pv_14117g_sommer_gc_20180806.sas7bdat')
+dat_pollution = read.sas7bdat('data_pipeline_microbiome/KORA_variables/pv_14117g_sommer_gc_20180806.sas7bdat')
 head(dat_pollution)
 
 # processing
@@ -197,8 +198,8 @@ g_medic <- ggplot(dat_melt_bin3, aes(x = factor(W), fill = factor(value))) +
 # Matching #
 ############
 
-setwd("/Volumes/GoogleDrive/My\ Drive/Bureau/Stephane_matching") ### put code elsewhere ### ADD functions to github !
-source("matchingOzone_functions_2.R")
+# import Rcpp functions for pair matching 
+source("Pipeline_Microbiome/misc/Stephane_matching.R")
 
 data_match = data
 
