@@ -1,0 +1,15 @@
+---
+title: "Randomization-based causal inference framework to analyze 16s rRNA gut microbiome data."
+output:
+  md_document:
+    variant: markdown_github
+---
+
+## Framework
+
+![Image of Graphical abstract](misc/Fig1_graphical_abstract.png)
+
+
+## Data access
+
+See microbiome_ASV_data file
