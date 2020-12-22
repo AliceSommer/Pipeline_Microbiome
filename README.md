@@ -53,10 +53,11 @@ for any other data combined in a phyloseq object.
 R code in [`1_alpha_diversity`](1_alpha_diversity) folder.
 
 We used Amy Willis’ R packages
-[`breakaway`](https://github.com/adw96/breakaway) \[[Willis and Bunge,
-2015](https://onlinelibrary.wiley.com/doi/abs/10.1111/biom.12332)\] for
-richness estimation and [`DivNet`](https://github.com/adw96/DivNet) for
-Shannon index estimation \[[Willis,
+[`breakaway`](https://github.com/adw96/breakaway) for richness
+estimation \[[Willis and Bunge,
+2015](https://onlinelibrary.wiley.com/doi/abs/10.1111/biom.12332)\] and
+[`DivNet`](https://github.com/adw96/DivNet) for Shannon index estimation
+\[[Willis,
 2020](https://academic.oup.com/biostatistics/advance-article-abstract/doi/10.1093/biostatistics/kxaa015/5841114)\].
 
 #### Beta-diversity
@@ -66,7 +67,8 @@ R code in [`2_beta_diversity`](2_beta_diversity) folder.
 The distance calculations where done with the phyloseq package and we
 used Anna Plantinga’s R package
 [`MiRKAT`](https://cran.r-project.org/web/packages/MiRKAT/index.html)
-for the test statistic \[\].
+for the test statistic calculations \[[Zhao et al.,
+2015](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4570290/)\].
 
 ### Compostion
 
@@ -106,7 +108,13 @@ diversity via frequency
 ratios.](https://onlinelibrary.wiley.com/doi/abs/10.1111/biom.12332)
 *Biometric Methodology*, 71:1042-1049.
 
-\[Willis and Bryan, 2020\] Willis A and Bryan D.M (2020); [Estimating
+\[Willis and Bryan, 2020\] Willis A and Bryan DM (2020); [Estimating
 diversity in networked ecological
 communities](https://academic.oup.com/biostatistics/advance-article-abstract/doi/10.1093/biostatistics/kxaa015/5841114)
 *Biostatistics*, kxaa015
+
+\[Zhao et al., 2015\] Zhao N, Chen J, Carroll IM, et al. (2015);
+[Testing in Microbiome-Profiling Studies with MiRKAT, the Microbiome
+Regression-Based Kernel Association
+Test.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4570290/) *Am J Hum
+Genet.*, 96(5):797-807
