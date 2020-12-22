@@ -9,9 +9,9 @@ Framework
 Data access
 -----------
 
-Blabla on KORA (Heller
-(2018))(<a href="https://pubmed.ncbi.nlm.nih.gov/16032513/" class="uri">https://pubmed.ncbi.nlm.nih.gov/16032513/</a>)
-and links to access.
+Blabla on KORA ([Heller et
+al. (2018)](https://pubmed.ncbi.nlm.nih.gov/16032513/)) and links to
+access.
 
 See [`microbiome_ASV_data`](microbiome_ASV_data) file for details about
 the data pre-processing. See Bla for recode.
