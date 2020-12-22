@@ -76,9 +76,10 @@ for the test statistic calculations \[[Zhao et al.,
 
 R code in [`3_mean_diff_test`](3_mean_diff_test) folder.
 
-Code:
+Cao, Lin, and Li’s github repository:
 [`composition-two-sampe-test`](https://github.com/yuanpeicao/composition-two-sampe-test)
-github.
+\[[Cao, Lin, and Li,
+2018](https://academic.oup.com/biomet/article/105/1/115/4591648)\].
 
 #### Differential abundance
 
@@ -111,10 +112,15 @@ ratios.](https://onlinelibrary.wiley.com/doi/abs/10.1111/biom.12332)
 \[Willis and Bryan, 2020\] Willis A and Bryan DM (2020); [Estimating
 diversity in networked ecological
 communities](https://academic.oup.com/biostatistics/advance-article-abstract/doi/10.1093/biostatistics/kxaa015/5841114)
-*Biostatistics*, kxaa015
+*Biostatistics*, kxaa015.
 
 \[Zhao et al., 2015\] Zhao N, Chen J, Carroll IM, et al. (2015);
 [Testing in Microbiome-Profiling Studies with MiRKAT, the Microbiome
 Regression-Based Kernel Association
 Test.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4570290/) *Am J Hum
-Genet.*, 96(5):797-807
+Genet.*, 96(5):797-807.
+
+\[Cao, Lin, Li, 2018\] Cao, Y., Lin, W. and Li, H. (2018). [Two-sample
+tests of high-dimensional means for compositional
+data.](https://academic.oup.com/biomet/article/105/1/115/4591648)
+*Biometrika*, 105:115-132.
