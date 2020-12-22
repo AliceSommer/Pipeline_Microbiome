@@ -26,12 +26,12 @@ generation can be found in the [`design`](design) file. The matrix of
 10,000 possible randomization of the intervention assignment is also
 generated directly after matching.
 
-Note 1: the matching functions
+*Note 1*: the matching functions
 [Stephane\_matching.R](misc/Stephane_matching.R) were written in Rcpp by
-Dr. Stéphane Shao. Note 2: other matching strategies are valid. The
+Dr. Stéphane Shao.\\ *Note 2*: other matching strategies are valid. The
 researcher should take the conceptual hypothetical experiment into
-account when choosing its strategy. Note 3: to make the matching easier
-we re-formated/coded the original KORA variables. See
+account when choosing its strategy.\\ *Note 3*: to make the matching
+easier we re-formated/coded the original KORA variables. See
 [`misc/format_KORA_variables.R`](misc/format_KORA_variables.R) file.
 
 Stage 3: Analysis
