@@ -1,11 +1,16 @@
 library(quantmod)
 
+wd <- '/Users/alicesommer/Desktop/Bureau/DOCTORATE'
+
+# set working directory
+setwd(wd)
+
 # load all the data files from KORA.passt (Anja Ludolph)
-dataset <- read.csv("/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/KORA\ DATA/Microbiome_data/KORA_microbiome_variables.csv")
+dataset <- read.csv("data_pipeline_microbiome/KORA_variables/Microbiome_data/KORA_microbiome_variables.csv")
 
-bio_alpha <- read.csv('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/KORA\ DATA/Microbiome_data/Speziestabelle\ Bio_Nr/bio_alpha_diversity.csv')
+bio_alpha <- read.csv('data_pipeline_microbiome/KORA_variables/Speziestabelle\ Bio_Nr/bio_alpha_diversity.csv')
 
-otu_table <- read.csv('/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/KORA\ DATA/Microbiome_data/Speziestabelle\ Bio_Nr/bio_otu.csv'
+otu_table <- read.csv('data_pipeline_microbiome/KORA_variables/Speziestabelle\ Bio_Nr/bio_otu.csv'
                       , check.names=FALSE)
 
 # merge dataset and alpha diversity measures 
@@ -112,4 +117,4 @@ dat_transformed <- dataset3[,c(1:2, 201:207,11:12,
 ## CATEGORICAL: u3tberufb1 : u3tsexual5
 ## CATEGORICAL (original): u3tphact : u3tsexual, u3c039as5 : u3c039es6 (cancer codes), lca_sf14 : lca_icd5_sf14 (cancer codes), u3tmdbi (drug burden index score)
 
-# save(dat_transformed, file = '/Volumes/GoogleDrive/My\ Drive/DOCTORATE/Thesis/Microbiome\ -\ NOV18/dat_transformed_NOV18.RData')
+# save(dat_transformed, file = 'data_pipeline_microbiome/dat_transformed.RData')
