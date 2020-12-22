@@ -28,10 +28,14 @@ generated directly after matching.
 
 *Note 1*: the matching functions
 [Stephane\_matching.R](misc/Stephane_matching.R) were written in Rcpp by
-Dr. Stéphane Shao.\\ *Note 2*: other matching strategies are valid. The
-researcher should take the conceptual hypothetical experiment into
-account when choosing its strategy.\\ *Note 3*: to make the matching
-easier we re-formated/coded the original KORA variables. See
+Dr. Stéphane Shao.
+
+*Note 2*: other matching strategies are valid. The researcher should
+take the conceptual hypothetical experiment into account when choosing
+its strategy.
+
+*Note 3*: to make the matching easier we re-formated/coded the original
+KORA variables. See
 [`misc/format_KORA_variables.R`](misc/format_KORA_variables.R) file.
 
 Stage 3: Analysis
