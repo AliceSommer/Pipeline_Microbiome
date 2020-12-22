@@ -13,9 +13,10 @@ output:
 
 ## Data access
 
-Blabla on KORA and links to access.
+Blabla on KORA (Heller (2018))(https://pubmed.ncbi.nlm.nih.gov/16032513/) and links to access.
 
 See [`microbiome_ASV_data`](microbiome_ASV_data) file for details about the data pre-processing.
+See Bla for recode.
 
 ## Stage 2: Design
 
