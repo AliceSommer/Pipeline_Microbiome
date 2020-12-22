@@ -9,7 +9,10 @@ Framework
 Data access
 -----------
 
-See ([`microbiome_ASV_data`](microbiome_ASV_data))
+Blabla on KORA and links to access.
+
+See [`microbiome_ASV_data`](microbiome_ASV_data) file for details about
+the data pre-processing.
 
 Stage 2: Design
 ---------------
