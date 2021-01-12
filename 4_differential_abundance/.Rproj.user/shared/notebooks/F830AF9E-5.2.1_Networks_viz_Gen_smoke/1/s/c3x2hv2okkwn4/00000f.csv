@@ -1,4 +1,0 @@
-"0","legend(""top"", "
-"0","       inset = .05, title = ""phylum:"","
-"0","       legend=levels(phyl_ps_prune), ncol = 2,"
-"0","       col=phylcol, pt.bg = phylcol, bty = ""n"", pch=16) "

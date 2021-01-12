@@ -1,4 +1,0 @@
-"0","summary(props_W)[[2]]"
-"2","Error in summary.microNetProps(props_W) : 
-  (list) object cannot be coerced to type 'double'
-"
