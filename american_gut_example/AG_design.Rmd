@@ -1,0 +1,92 @@
+---
+title: "Design stage"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE, warning = FALSE}
+library(phyloseq)
+library(ggplot2)
+```
+
+## American gut data 
+
+```{r, warning = FALSE}
+load('./agdata.rda')
+agdata
+```
+
+### Exposure/Intervention
+
+```{r}
+# grep('smok',colnames(sample_data(agdata)))
+colnames(sample_data(agdata))[61]; table(sample_data(agdata)[,61])
+```
+```{r}
+# keep samples of smoker and never-smoker
+agdata_smoke <- prune_samples(sample_data(agdata)$smoking_frequency %in% c('Daily','Never'), agdata)
+rm(agdata)
+
+agdata_smoke
+```
+
+### Background covariates
+
+```{r}
+# grep('sex',colnames(sample_data(agdata_smoke)))
+# colnames(sample_data(agdata_smoke))[20]
+table(sample_data(agdata_smoke)[,20])
+agdata_smoke <- prune_samples(sample_data(agdata_smoke)$sex %in% c('female','male'), agdata_smoke)
+
+# grep('age_cat',colnames(sample_data(agdata_smoke)))
+# colnames(sample_data(agdata_smoke))[309]
+table(sample_data(agdata_smoke)[,309])
+agdata_smoke <- prune_samples(!sample_data(agdata_smoke)$age_cat %in% c('Not provided','','child','teen'), agdata_smoke)
+
+# grep('bmi',colnames(sample_data(agdata_smoke)))
+# colnames(sample_data(agdata_smoke))[109]
+summary(sample_data(agdata_smoke)[,109])
+agdata_smoke <- prune_samples(!sample_data(agdata_smoke)$bmi_corrected %in% c('Not provided',''), agdata_smoke)
+
+# str(sample_data(agdata_smoke)[,c(20,309,109)])
+sample_data(agdata_smoke)$bmi_corrected <- as.numeric(as.character(sample_data(agdata_smoke)$bmi_corrected))
+summary(sample_data(agdata_smoke)[,c(20,309,109)])
+```
+
+## Matching
+
+### prepare the before matching data
+
+```{r}
+data <- as.data.frame(sample_data(agdata_smoke))
+
+# create the exposure variable
+data$W <- NA
+data[data$smoking_frequency == "Daily",]$W <- 0 # raucher
+data[data$smoking_frequency == "Never",]$W <- 1 # nie-raucher
+dim(data)
+table(data$W)
+```
+
+### before matching background covariates plots
+
+```{r}
+colnames_covs = c("sex", "age_cat", "bmi_corrected")
+```
+
+```{r}
+### Sex ###
+g_sex <- ggplot(data, aes(x = factor(W), fill = sex)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(name = "Sex", values = c('darkgray','lightgray')) +
+  scale_x_discrete(name = "Smoking", breaks = c(0,1), labels = c("Yes","No")) +
+  theme(legend.position = "top", legend.key.size =  unit(0.1, "in"))
+g_sex
+```
+
+
+
+
