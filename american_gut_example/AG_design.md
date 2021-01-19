@@ -106,7 +106,7 @@ summary(sample_data(agdata_smoke)[,c(20,309,109)])
 
 ## Matching
 
-### prepare the before matching data
+### prepare before matching data
 
 ``` r
 data <- as.data.frame(sample_data(agdata_smoke))
@@ -145,3 +145,30 @@ g_sex
 ```
 
 ![](AG_design_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+``` r
+### Age
+g_age <- ggplot(data, aes(x = factor(W), fill = age_cat)) +
+  geom_bar(position = "fill") +
+  scale_fill_brewer(name = "Age", 
+                   palette="RdBu") +
+  scale_x_discrete(name = "Smoking", breaks = c(0,1), labels = c("Yes","No")) +
+  theme(legend.position = "top", legend.key.size =  unit(0.1, "in")) + guides(fill=guide_legend(nrow=3,byrow=TRUE))
+g_age
+```
+
+![](AG_design_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+``` r
+g_bmi <- ggplot(data, aes(x = bmi_corrected, fill = factor(W)))  +
+  geom_density(alpha = .8) + xlab("BMI (kg/m2)") +
+  scale_fill_manual(name = "Smoking", breaks = c(0,1),
+                    labels=c("Yes","No"), values = c('gray','green4')) +
+  xlim(c(15,60)) +   
+  theme(legend.position = "top", legend.key.size =  unit(0.1, "in"))
+g_bmi
+```
+
+    ## Warning: Removed 39 rows containing non-finite values (stat_density).
+
+![](AG_design_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
