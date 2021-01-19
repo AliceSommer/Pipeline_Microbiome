@@ -135,7 +135,7 @@ colnames_covs = c("sex", "age_cat", "bmi_corrected")
 ```
 
 ``` r
-### Sex ###
+### Sex 
 g_sex <- ggplot(data, aes(x = factor(W), fill = sex)) +
   geom_bar(position = "fill") +
   scale_fill_manual(name = "Sex", values = c('darkgray','lightgray')) +
