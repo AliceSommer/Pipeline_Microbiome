@@ -67,6 +67,8 @@ sample_data(ps_prune)[,"upper"] <- summary(ba)$upper
 sample_data(ps_prune)[,"sample_counts"] <- sample_sums(ps_prune)
 sample_data(ps_prune)[,"richness"] <- summary(rich)$estimate
 
+sample_data(ps_prune)[,"dim"] <- as.factor(1:dim(sample_df)[1])
+
 ggplot(sample_data(ps_prune), aes(x = dim)) + 
   geom_point(aes(y = breakaway_W), colour = "red") + 
   # geom_errorbar(aes(ymin=lower, ymax=upper)) +

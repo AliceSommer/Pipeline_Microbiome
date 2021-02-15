@@ -88,18 +88,18 @@ ggplot(sample_data(ps_prune), aes(x = dim)) +
 
 g_PM <- ggplot(sample_data(ps_prune), aes(color = factor(W), y = DivNet_W)) +
   geom_boxplot(alpha = .5) + ylab('DivNet shannon index') +
-  scale_x_discrete(name = "") +
-  scale_colour_manual(values = c("darkgreen","blue4"), limits=c("1","0"), name ="Long-term PM2.5", labels = c("Low","High")) +
-  # scale_colour_manual(values = c("darkgreen","blue4"), limits=c("1","0"), name ="Smoking", labels = c("No","Yes")) +
+  scale_x_discrete(name = "") + ylim(1.2,4) + 
+  # scale_colour_manual(values = c("darkgreen","blue4"), limits=c("1","0"), name ="Long-term PM2.5", labels = c("Low","High")) +
+  scale_colour_manual(values = c("darkgreen","blue4"), limits=c("1","0"), name ="Smoking", labels = c("No","Yes")) +
   theme(legend.position = "top", legend.key.size =  unit(0.1, "in")) +
   guides(color=guide_legend(nrow=2,byrow=TRUE))  + 
   annotate(geom="text",x=.7, y=1.45, label="stat. = 0.1") +
-  annotate(geom="text",x=.7, y=1.75, label=expression(p-value %~~% 0.0388))
+  annotate(geom="text",x=.7, y=1.9, label=expression(p-value %~~% 0.0497))
 
 # PM: p-value = 0.0388; test-statistic = 0.1036517 
-# AP: p-value = 0.0497; test-statistic = 0.0588
+# AP: p-value = 0.0497; test-statistic = 0.0588 
 
-# ggsave(g_PM, file = "/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/box_shan_PM.png",
+# ggsave(g_PM, file = "/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/box_shan_smoke.png",
 #        dpi=300,
 #        width = 85,
 #        height = 120,
