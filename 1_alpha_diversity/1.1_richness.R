@@ -18,12 +18,12 @@ taxon_assign <- readRDS('dada2output/taxa2020.rds')
 load("dada2output/phylotree2020.RData")
 
 ## load sample/matched_data
-load('dat_matched_PM25_bis.RData')
-# load('dat_matched_smoke_bis.RData')
+# load('dat_matched_PM25_bis.RData')
+load('dat_matched_smoke_bis.RData')
 
 ## load W matrix for randomization test
-load("W_paired_PM25.Rdata")
-# load("W_paired_smoke_bis.Rdata")
+# load("W_paired_PM25.Rdata")
+load("W_paired_smoke_bis.Rdata")
 
 ############################
 # create a phyloseq object # 
@@ -75,29 +75,20 @@ ggplot(sample_data(ps_prune), aes(x = dim)) +
   geom_point(aes(y = richness), colour = "blue", alpha = .5) +
   xlab('Samples') + ylab("BA estimate")
 
-# hist(sample_data(ps_prune)$ba_error_W, breaks = 50)
-# head(sample_data(ps_prune)[sample_data(ps_prune)$breakaway_W > 400, c("ba_error_W","sample_counts","breakaway_W","pair_nb")])
-# head(sample_data(ps_prune)[sample_data(ps_prune)$pair_nb == 62, c("ba_error_W","sample_counts","breakaway_W","pair_nb")])
-# 
-# summary(sample_data(ps_prune)$sample_counts)
-# 
-# # remove the outlier for plot ?
-# ps_prune_out <- subset_samples(ps_prune, pair_nb != 62)
-
 g_PM <- ggplot(sample_data(ps_prune), aes(color = factor(W), y = breakaway_W)) +
   geom_boxplot(alpha = .5) + ylab('breakaway richness measure') +
-  scale_x_discrete(name = "") +
-  scale_colour_manual(values = c("darkgreen","blue4"), limits=c("1","0"), name ="Long-term PM2.5", labels = c("Low","High")) +
-  # scale_colour_manual(values = c("darkgreen","blue4"), limits=c("1","0"), name ="Smoking", labels = c("No","Yes")) +
+  scale_x_discrete(name = "") + ylim(40, 300) +
+  # scale_colour_manual(values = c("darkgreen","blue4"), limits=c("1","0"), name ="Long-term PM2.5", labels = c("Low","High")) +
+  scale_colour_manual(values = c("darkgreen","blue4"), limits=c("1","0"), name ="Smoking", labels = c("No","Yes")) +
   theme(legend.position = "top", legend.key.size =  unit(0.1, "in")) +
   guides(color=guide_legend(nrow=2,byrow=TRUE)) + 
-  annotate(geom="text",x=.7, y=45, label="stat. = 19.1") +
-  annotate(geom="text",x=.7, y=70, label=expression(p-value %~~% "0.0008")) 
+  annotate(geom="text",x=.7, y=45, label="stat. = 4.1") +
+  annotate(geom="text",x=.7, y=70, label=expression(p-value %~~% "0.1432")) 
 
 # PM: p-value = 0.0008; test-statistic = 19.0775
-# Smoke: p-value = 0.1518; test-statistic = 3.9576
+# Smoke: p-value = 0.1432; test-statistic = 4.1
 
-# ggsave(g_PM, file = "/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/box_break_PM.png",
+# ggsave(g_PM, file = "/Users/alicesommer/Desktop/Bureau/DOCTORATE/plots_pipeline_microbiome/box_break_smoke.png",
 #        dpi=300,
 #        width = 85,
 #        height = 120,
